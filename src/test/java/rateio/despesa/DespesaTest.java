@@ -84,4 +84,26 @@ public class DespesaTest {
         org.junit.jupiter.api.Assertions.assertFalse(despesa.estaAtiva());
     }
 
+    @Test
+    @DisplayName("Deve garantir a imutabilidade da lista de parcelas retornada")
+    void deveLancarExcecaoAoTentarModificarListaDeParcelasRetornada() {
+        UUID grupoId = UUID.randomUUID();
+        UUID pagadorId = UUID.randomUUID();
+
+        Despesa despesa = new Despesa(
+                grupoId,
+                pagadorId,
+                "Cinema",
+                new BigDecimal("50.00"),
+                Despesa.EstrategiaDivisao.IGUAL,
+                List.of(new Despesa.Parcela(UUID.randomUUID(), new BigDecimal("50.00")))
+        );
+
+        List<Despesa.Parcela> parcelas = despesa.parcelas();
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                UnsupportedOperationException.class,
+                () -> parcelas.add(new Despesa.Parcela(UUID.randomUUID(), new BigDecimal("10.00")))
+        );
+    }
 }
