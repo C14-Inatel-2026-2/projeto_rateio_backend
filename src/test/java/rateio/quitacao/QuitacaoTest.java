@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.atLeastOnce;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -50,5 +51,28 @@ public class QuitacaoTest {
 
         assertFalse(quitacao.envolve(semMovimentacao));
         assertEquals(1, quitacao.quantidadeDeTransferencias());
+    }
+
+    @Test
+    void mockCredorDevedor() {
+        UUID credorId = UUID.randomUUID();
+        UUID devedorId = UUID.randomUUID();
+
+        Saldo credor = mock(Saldo.class);
+        when(credor.membroId()).thenReturn(credorId);
+        when(credor.valor()).thenReturn(new BigDecimal("100"));
+
+        Saldo devedor = mock(Saldo.class);
+        when(devedor.membroId()).thenReturn(devedorId);
+        when(devedor.valor()).thenReturn(new BigDecimal("-100"));
+
+        Quitacao quitacao = Quitacao.apartirDe(List.of(credor, devedor));
+
+        assertEquals(1, quitacao.quantidadeDeTransferencias());
+        assertEquals(devedorId, quitacao.transferencias().get(0).deId());
+        assertEquals(credorId, quitacao.transferencias().get(0).paraId());
+
+        verify(credor, atLeastOnce()).valor();
+        verify(devedor, atLeastOnce()).valor();
     }
 }
