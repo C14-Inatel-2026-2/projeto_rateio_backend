@@ -62,4 +62,19 @@ public class GrupoTest {
         assertEquals(instanteFixo, grupo.getDataCriacao());
         verify(relogio, times(1)).instant();
     }
+
+    @Test
+    public void getDataCriacaoAposAlterarMembrosMockTest() {
+        Instant criacao = Instant.parse("2026-01-15T10:00:00Z");
+        Instant depois  = Instant.parse("2026-02-20T18:30:00Z");
+        when(relogio.instant()).thenReturn(criacao, depois);
+        UUID ana        = UUID.randomUUID();
+        Grupo grupo     = new Grupo("Viagem", Set.of(ana), relogio);
+
+        grupo.adicionarMembro(UUID.randomUUID());
+        grupo.removerMembro(ana);
+
+        assertEquals(criacao, grupo.getDataCriacao());
+        verify(relogio, times(1)).instant();
+    }
 }
