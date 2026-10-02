@@ -2,15 +2,22 @@ package rateio.grupo;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class GrupoTest {
+    @Mock
+    private Clock relogio;
+
     @Test
     public void adicionarMembroTest() {
         UUID ana        = UUID.randomUUID();
@@ -43,5 +50,16 @@ public class GrupoTest {
 
         assertThrows(IllegalStateException.class, () -> grupo.adicionarMembro(ana));
         assertEquals(1, grupo.getQuantidadeDeMembros());
+    }
+
+    @Test
+    public void getDataCriacaoMockTest() {
+        Instant instanteFixo    = Instant.parse("2026-01-15T10:00:00Z");
+        when(relogio.instant()).thenReturn(instanteFixo);
+
+        Grupo grupo             = new Grupo("Viagem", Set.of(UUID.randomUUID()), relogio);
+
+        assertEquals(instanteFixo, grupo.getDataCriacao());
+        verify(relogio, times(1)).instant();
     }
 }
