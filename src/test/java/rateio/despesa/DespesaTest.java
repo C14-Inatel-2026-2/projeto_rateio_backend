@@ -35,5 +35,32 @@ public class DespesaTest {
         );
 
         assertTrue(despesa.parcelasFecham());
+
+    }
+
+    @Test
+    @DisplayName("Deve retornar o valor correto devido por um membro em parcelaDe e zero para nao participantes")
+    void deveRetornarValorDevidoPorMembroEZeroParaNaoParticipante() {
+        UUID grupoId = UUID.randomUUID();
+        UUID pagadorId = UUID.randomUUID();
+        UUID membroParticipante = UUID.randomUUID();
+        UUID membroNaoParticipante = UUID.randomUUID();
+        BigDecimal valorParcela = new BigDecimal("45.50");
+
+        List<Despesa.Parcela> parcelas = List.of(
+                new Despesa.Parcela(membroParticipante, valorParcela)
+        );
+
+        Despesa despesa = new Despesa(
+                grupoId,
+                pagadorId,
+                "Uber compartilhado",
+                valorParcela,
+                Despesa.EstrategiaDivisao.IGUAL,
+                parcelas
+        );
+
+        org.junit.jupiter.api.Assertions.assertEquals(valorParcela, despesa.parcelaDe(membroParticipante));
+        org.junit.jupiter.api.Assertions.assertEquals(BigDecimal.ZERO, despesa.parcelaDe(membroNaoParticipante));
     }
 }
