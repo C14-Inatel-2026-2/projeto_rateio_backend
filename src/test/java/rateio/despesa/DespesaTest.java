@@ -1,0 +1,39 @@
+package rateio.despesa;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+public class DespesaTest {
+
+    @Test
+    @DisplayName("Deve retornar true em parcelasFecham quando a soma das parcelas for igual ao valor total")
+    void deveRetornarTrueQuandoSomaDasParcelasForIgualAoValorTotal() {
+        UUID grupoId = UUID.randomUUID();
+        UUID pagadorId = UUID.randomUUID();
+        UUID membro1 = UUID.randomUUID();
+        UUID membro2 = UUID.randomUUID();
+
+        BigDecimal valorTotal = new BigDecimal("100.00");
+        List<Despesa.Parcela> parcelas = List.of(
+                new Despesa.Parcela(membro1, new BigDecimal("60.00")),
+                new Despesa.Parcela(membro2, new BigDecimal("40.00"))
+        );
+
+        Despesa despesa = new Despesa(
+                grupoId,
+                pagadorId,
+                "Jantar de equipe",
+                valorTotal,
+                Despesa.EstrategiaDivisao.VALORES_FIXOS,
+                parcelas
+        );
+
+        assertTrue(despesa.parcelasFecham());
+    }
+}
