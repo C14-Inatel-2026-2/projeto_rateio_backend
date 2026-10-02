@@ -33,4 +33,22 @@ public class QuitacaoTest {
         assertEquals(2, quitacao.quantidadeDeTransferencias());
         assertEquals(0, quitacao.totalTransferido().compareTo(new BigDecimal("60")));
     }
+
+    @Test
+    void saldoZero() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        UUID semMovimentacao = UUID.randomUUID();
+
+        List<Saldo> saldos = List.of(
+                new Saldo(a, new BigDecimal("30")),
+                new Saldo(b, new BigDecimal("-30")),
+                new Saldo(semMovimentacao, BigDecimal.ZERO)
+        );
+
+        Quitacao quitacao = Quitacao.apartirDe(saldos);
+
+        assertFalse(quitacao.envolve(semMovimentacao));
+        assertEquals(1, quitacao.quantidadeDeTransferencias());
+    }
 }
