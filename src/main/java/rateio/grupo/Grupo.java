@@ -1,57 +1,67 @@
 package rateio.grupo;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
 public class Grupo {
-    private UUID id;
-    private String nome;
-    private Set<UUID> membros;
-    private Instant criadoEm;
+    private UUID        id;
+    private String      nome;
+    private Set<UUID>   membros;
+    private Instant     criadoEm;
 
     public Grupo(String nome, Set<UUID> membrosIniciais) {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+        this(nome, membrosIniciais, Clock.systemUTC());
     }
 
-    /** H1: lanca conflito se o membro ja pertence ao grupo. */
+    public Grupo(String nome, Set<UUID> membrosIniciais, Clock relogio) {
+        this.id         = UUID.randomUUID();
+        this.nome       = Objects.requireNonNull(nome, "nome");
+        this.membros    = new HashSet<>(Objects.requireNonNull(membrosIniciais, "membrosIniciais"));
+        this.criadoEm   = Objects.requireNonNull(relogio, "relogio").instant();
+    }
+
     public void adicionarMembro(UUID membroId) {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+        Objects.requireNonNull(membroId, "membroId");
+        if (!membros.add(membroId)) {
+            throw new IllegalStateException("Membro ja pertence ao grupo: " + membroId);
+        }
     }
 
-    /** H1: lanca erro se o membro nao pertence ao grupo. */
     public void removerMembro(UUID membroId) {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+        if (!membros.remove(membroId)) {
+            throw new IllegalArgumentException("Membro nao pertence ao grupo: " + membroId);
+        }
     }
 
-    /** H2: usado para rejeitar pagador ou participante externo ao grupo. */
     public boolean contem(UUID membroId) {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+        return membros.contains(membroId);
     }
 
-    /** H2: valida que todos os participantes de uma despesa pertencem ao grupo. */
     public boolean contemTodos(Set<UUID> membrosIds) {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+        return membros.containsAll(membrosIds);
     }
 
-    public int quantidadeDeMembros() {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+    public int getQuantidadeDeMembros() {
+        return membros.size();
     }
 
-    public UUID id() {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+    public UUID getId() {
+        return id;
     }
 
-    public String nome() {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+    public String getNome() {
+        return nome;
     }
 
-    /** Retorna copia imutavel: a colecao interna nao vaza. */
-    public Set<UUID> membros() {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+    public Set<UUID> getMembros() {
+        return Set.copyOf(membros);
     }
 
-    public Instant criadoEm() {
-        throw new UnsupportedOperationException("H1 - nao implementado");
+    public Instant getDataCriacao() {
+        return criadoEm;
     }
 }
