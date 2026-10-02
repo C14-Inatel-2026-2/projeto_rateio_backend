@@ -63,4 +63,25 @@ public class DespesaTest {
         org.junit.jupiter.api.Assertions.assertEquals(valorParcela, despesa.parcelaDe(membroParticipante));
         org.junit.jupiter.api.Assertions.assertEquals(BigDecimal.ZERO, despesa.parcelaDe(membroNaoParticipante));
     }
+
+    @Test
+    @DisplayName("Deve inativar a despesa ao executar o estorno")
+    void deveInativarDespesaAoEstornar() {
+        UUID grupoId = UUID.randomUUID();
+        UUID pagadorId = UUID.randomUUID();
+
+        Despesa despesa = new Despesa(
+                grupoId,
+                pagadorId,
+                "Mercado",
+                new BigDecimal("200.00"),
+                Despesa.EstrategiaDivisao.IGUAL,
+                List.of()
+        );
+
+        despesa.estornar();
+
+        org.junit.jupiter.api.Assertions.assertFalse(despesa.estaAtiva());
+    }
+
 }
