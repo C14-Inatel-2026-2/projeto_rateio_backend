@@ -35,4 +35,13 @@ public class GrupoTest {
         assertEquals(2, grupo.getQuantidadeDeMembros());
         assertFalse(grupo.contem(leticia));
     }
+
+    @Test
+    public void adicionarMembroDuplicadoNegativoTest() {
+        UUID ana        = UUID.randomUUID();
+        Grupo grupo     = new Grupo("Viagem", Set.of(ana));
+
+        assertThrows(IllegalStateException.class, () -> grupo.adicionarMembro(ana));
+        assertEquals(1, grupo.getQuantidadeDeMembros());
+    }
 }
