@@ -75,4 +75,18 @@ public class QuitacaoTest {
         verify(credor, atLeastOnce()).valor();
         verify(devedor, atLeastOnce()).valor();
     }
+
+    @Test
+    void mockSomaInvalida() {
+        Saldo saldo1 = mock(Saldo.class);
+        when(saldo1.valor()).thenReturn(new BigDecimal("100"));
+
+        Saldo saldo2 = mock(Saldo.class);
+        when(saldo2.valor()).thenReturn(new BigDecimal("-50"));
+
+        List<Saldo> saldosInconsistentes = List.of(saldo1, saldo2);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> Quitacao.apartirDe(saldosInconsistentes));
+    }
 }
