@@ -28,5 +28,21 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy') {
+            when {
+                beforeAgent true
+                branch 'main'
+            }
+            environment {
+                DEPLOY_DIR = 'C:\\deploy\\rateio-backend'
+            }
+            steps {
+                bat '''
+                    if not exist "%DEPLOY_DIR%" mkdir "%DEPLOY_DIR%"
+                    copy /Y target\\*.jar "%DEPLOY_DIR%"
+                '''
+            }
+        }
     }
 }
