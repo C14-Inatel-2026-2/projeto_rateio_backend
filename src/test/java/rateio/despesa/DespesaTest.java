@@ -1,15 +1,101 @@
 package rateio.despesa;
 
+import static rateio.despesa.Despesa.EstrategiaDivisao.IGUAL;
+import static rateio.despesa.Despesa.EstrategiaDivisao.VALORES_FIXOS;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
-
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class DespesaTest {
+
+    private static final BigDecimal CINQUENTA = new BigDecimal("50.00");
+
+    private Despesa.Parcela parcela(UUID membroId, String valor) {
+        return new Despesa.Parcela(membroId, new BigDecimal(valor));
+    }
+
+    private Despesa despesaDeDois(UUID pagador, UUID outro) {
+        return new Despesa(UUID.randomUUID(), pagador, "Mercado", new BigDecimal("100.00"),
+                IGUAL, List.of(parcela(pagador, "50.00"), parcela(outro, "50.00")));
+    }
+
+    private void rejeita(UUID grupo, UUID pagador, String descricao, BigDecimal total,
+                         Despesa.EstrategiaDivisao estrategia, List<Despesa.Parcela> parcelas) {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Despesa(grupo, pagador, descricao, total, estrategia, parcelas));
+    }
+
+    @Test
+    void rejeitaGrupoNulo() {
+        UUID p = UUID.randomUUID();
+        rejeita(null, p, "Mercado", CINQUENTA, IGUAL, List.of(parcela(p, "50.00")));
+    }
+
+
+    @Test
+    void rejeitaPagadorNulo() {
+        rejeita(UUID.randomUUID(), null, "Mercado", CINQUENTA, IGUAL,
+                List.of(parcela(UUID.randomUUID(), "50.00")));
+    }
+
+    @Test
+    void rejeitaDescricaoVazia() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, " ", CINQUENTA, IGUAL, List.of(parcela(p, "50.00")));
+    }
+
+    @Test
+    void rejeitaValorZero() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, "Mercado", BigDecimal.ZERO, IGUAL, List.of(parcela(p, "0.00")));
+    }
+
+    @Test
+    void rejeitaValorNegativo() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, "Mercado", new BigDecimal("-50.00"), IGUAL,
+                List.of(parcela(p, "-50.00")));
+    }
+
+    @Test
+    void rejeitaEstrategiaNula() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, "Mercado", CINQUENTA, null, List.of(parcela(p, "50.00")));
+    }
+
+    @Test
+    void rejeitaSemParcelas() {
+        rejeita(UUID.randomUUID(), UUID.randomUUID(), "Mercado", CINQUENTA, IGUAL, List.of());
+    }
+
+    @Test
+    void rejeitaParcelaNegativa() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, "Mercado", CINQUENTA, IGUAL,
+                List.of(parcela(p, "100.00"), parcela(UUID.randomUUID(), "-50.00")));
+    }
+
+    @Test
+    void rejeitaMembroRepetido() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, "Mercado", CINQUENTA, IGUAL,
+                List.of(parcela(p, "25.00"), parcela(p, "25.00")));
+    }
+    @Test
+    void rejeitaSomaDiferente() {
+        UUID p = UUID.randomUUID();
+        rejeita(UUID.randomUUID(), p, "Mercado", CINQUENTA, VALORES_FIXOS,
+                List.of(parcela(p, "30.00"), parcela(UUID.randomUUID(), "10.00")));
+    }
+
 
     @Test
     @DisplayName("Deve retornar true em parcelasFecham quando a soma das parcelas for igual ao valor total")
