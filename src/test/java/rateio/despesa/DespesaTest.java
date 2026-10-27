@@ -69,6 +69,7 @@ public class DespesaTest {
     void deveInativarDespesaAoEstornar() {
         UUID grupoId = UUID.randomUUID();
         UUID pagadorId = UUID.randomUUID();
+        UUID outroMembroId = UUID.randomUUID();
 
         Despesa despesa = new Despesa(
                 grupoId,
@@ -76,7 +77,10 @@ public class DespesaTest {
                 "Mercado",
                 new BigDecimal("200.00"),
                 Despesa.EstrategiaDivisao.IGUAL,
-                List.of()
+                List.of(
+                        new Despesa.Parcela(pagadorId, new BigDecimal("100.00")),
+                        new Despesa.Parcela(outroMembroId, new BigDecimal("100.00"))
+                )
         );
 
         despesa.estornar();
