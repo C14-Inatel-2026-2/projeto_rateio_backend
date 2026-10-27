@@ -95,7 +95,74 @@ public class DespesaTest {
         rejeita(UUID.randomUUID(), p, "Mercado", CINQUENTA, VALORES_FIXOS,
                 List.of(parcela(p, "30.00"), parcela(UUID.randomUUID(), "10.00")));
     }
+    @Test
+    void somaDasParcelas() {
+        UUID p = UUID.randomUUID();
+        UUID outro = UUID.randomUUID();
+        Despesa despesa = new Despesa(UUID.randomUUID(), p, "Jantar", new BigDecimal("100.00"),
+                VALORES_FIXOS, List.of(parcela(p, "60.00"), parcela(outro, "40.00")));
+        assertEquals(0, despesa.somaDasParcelas().compareTo(new BigDecimal("100.00")));
+    }
 
+    @Test
+    void parcelaDeNulo() {
+        Despesa despesa = despesaDeDois(UUID.randomUUID(), UUID.randomUUID());
+        assertEquals(0, despesa.parcelaDe(null).compareTo(BigDecimal.ZERO));
+    }
+
+    @Test
+    void participaDoGrupo() {
+        UUID outro = UUID.randomUUID();
+        assertTrue(despesaDeDois(UUID.randomUUID(), outro).participa(outro));
+    }
+
+    @Test
+    void naoParticipa() {
+        assertFalse(despesaDeDois(UUID.randomUUID(), UUID.randomUUID()).participa(UUID.randomUUID()));
+    }
+
+    @Test
+    void participaNulo() {
+        assertFalse(despesaDeDois(UUID.randomUUID(), UUID.randomUUID()).participa(null));
+    }
+
+    @Test
+    void nasceAtiva() {
+        Despesa despesa = despesaDeDois(UUID.randomUUID(), UUID.randomUUID());
+        assertTrue(despesa.estaAtiva());
+        assertFalse(despesa.estornada());
+        assertNull(despesa.estornadaEm());
+    }
+
+    @Test
+    void estornoRegistraData() {
+        Despesa despesa = despesaDeDois(UUID.randomUUID(), UUID.randomUUID());
+        despesa.estornar();
+        assertTrue(despesa.estornada());
+        assertNotNull(despesa.estornadaEm());
+    }
+
+    @Test
+    void estornoRepetido() {
+        Despesa despesa = despesaDeDois(UUID.randomUUID(), UUID.randomUUID());
+        despesa.estornar();
+        assertThrows(IllegalStateException.class, () -> despesa.estornar());
+    }
+
+    @Test
+    void dadosDaDespesa() {
+        UUID grupo = UUID.randomUUID();
+        UUID pagador = UUID.randomUUID();
+        Despesa despesa = new Despesa(grupo, pagador, "Mercado", new BigDecimal("100.00"),
+                Despesa.EstrategiaDivisao.POR_PESO, List.of(parcela(pagador, "100.00")));
+        assertNotNull(despesa.id());
+        assertEquals(grupo, despesa.grupoId());
+        assertEquals(pagador, despesa.pagadorId());
+        assertEquals("Mercado", despesa.descricao());
+        assertEquals(0, despesa.valorTotal().compareTo(new BigDecimal("100.00")));
+        assertEquals(Despesa.EstrategiaDivisao.POR_PESO, despesa.estrategia());
+        assertNotNull(despesa.registradaEm());
+    }
 
     @Test
     @DisplayName("Deve retornar true em parcelasFecham quando a soma das parcelas for igual ao valor total")
