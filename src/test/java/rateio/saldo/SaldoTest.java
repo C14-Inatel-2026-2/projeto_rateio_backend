@@ -100,5 +100,151 @@ public class SaldoTest {
         assertValor("60.00", novoSaldo(UUID.randomUUID(), "60.00").valorAbsoluto());
     }
 
+    @Test
+    void semDespesasTodosZerados() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(), List.of());
+        assertEquals(2, saldos.size());
+        assertValor("0", valorDe(saldos, a));
+        assertValor("0", valorDe(saldos, b));
+    }
+
+    @Test
+    void quemPagouFicaPositivo() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(jantar), List.of());
+        assertValor("50.00", valorDe(saldos, a));
+        assertValor("-50.00", valorDe(saldos, b));
+    }
+
+    @Test
+    void divisaoEntreTres() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        UUID c = UUID.randomUUID();
+        Despesa jantar = despesa(a, "90.00", parcela(a, "30.00"), parcela(b, "30.00"), parcela(c, "30.00"));
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b, c), List.of(jantar), List.of());
+        assertValor("60.00", valorDe(saldos, a));
+        assertValor("-30.00", valorDe(saldos, b));
+        assertValor("-30.00", valorDe(saldos, c));
+    }
+
+    @Test
+    void pagadorForaDaDivisao() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa presente = despesa(a, "100.00", parcela(b, "100.00"));
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(presente), List.of());
+        assertValor("100.00", valorDe(saldos, a));
+        assertValor("-100.00", valorDe(saldos, b));
+    }
+
+    @Test
+    void membroSemMovimentoAparece() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        UUID c = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b, c), List.of(jantar), List.of());
+        assertEquals(3, saldos.size());
+        assertValor("0", valorDe(saldos, c));
+    }
+
+    @Test
+    void somaVariasDespesas() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        Despesa cinema = despesa(b, "40.00", parcela(a, "20.00"), parcela(b, "20.00"));
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(jantar, cinema), List.of());
+        assertValor("30.00", valorDe(saldos, a));
+        assertValor("-30.00", valorDe(saldos, b));
+    }
+
+    @Test
+    void ignoraDespesaEstornada() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        jantar.estornar();
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(jantar), List.of());
+        assertValor("0", valorDe(saldos, a));
+        assertValor("0", valorDe(saldos, b));
+    }
+
+    @Test
+    void pagamentoReduzDivida() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        Pagamento acerto = pagamento(b, a, "30.00");
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(jantar), List.of(acerto));
+        assertValor("20.00", valorDe(saldos, a));
+        assertValor("-20.00", valorDe(saldos, b));
+    }
+
+    @Test
+    void ignoraPagamentoEstornado() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        Pagamento acerto = pagamento(b, a, "30.00");
+        acerto.estornar();
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(jantar), List.of(acerto));
+        assertValor("50.00", valorDe(saldos, a));
+        assertValor("-50.00", valorDe(saldos, b));
+    }
+
+    @Test
+    void quitacaoCompletaZeraSaldos() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Despesa jantar = despesa(a, "100.00", parcela(a, "50.00"), parcela(b, "50.00"));
+        Pagamento acerto = pagamento(b, a, "50.00");
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b), List.of(jantar), List.of(acerto));
+        assertValor("0", valorDe(saldos, a));
+        assertValor("0", valorDe(saldos, b));
+    }
+
+    @Test
+    void consolidadoSomaZero() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        UUID c = UUID.randomUUID();
+        Despesa jantar = despesa(a, "90.00", parcela(a, "30.00"), parcela(b, "30.00"), parcela(c, "30.00"));
+        Despesa cinema = despesa(b, "40.00", parcela(a, "20.00"), parcela(b, "20.00"));
+        Pagamento acerto = pagamento(c, a, "10.00");
+        List<Saldo> saldos = Saldo.consolidar(Set.of(a, b, c), List.of(jantar, cinema), List.of(acerto));
+        assertTrue(Saldo.somaZero(saldos));
+    }
+
+    @Test
+    void somaDosSaldos() {
+        List<Saldo> saldos = List.of(
+                novoSaldo(UUID.randomUUID(), "60.00"),
+                novoSaldo(UUID.randomUUID(), "-20.00"),
+                novoSaldo(UUID.randomUUID(), "-40.00"));
+        assertValor("0", Saldo.soma(saldos));
+        assertTrue(Saldo.somaZero(saldos));
+    }
+
+    @Test
+    void somaDiferenteDeZero() {
+        List<Saldo> saldos = List.of(
+                novoSaldo(UUID.randomUUID(), "60.00"),
+                novoSaldo(UUID.randomUUID(), "-20.00"));
+        assertValor("40.00", Saldo.soma(saldos));
+        assertFalse(Saldo.somaZero(saldos));
+    }
+
+    @Test
+    void somaListaVazia() {
+        assertValor("0", Saldo.soma(List.of()));
+        assertTrue(Saldo.somaZero(List.of()));
+    }
+
 
 }
