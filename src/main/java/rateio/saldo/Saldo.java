@@ -10,20 +10,27 @@ import rateio.despesa.Despesa;
 import rateio.pagamento.Pagamento;
 
 public record Saldo(UUID membroId, BigDecimal valor) {
+    public Saldo {
+        if (membroId == null || valor == null) {
+            throw new IllegalArgumentException("O ID do membro e o valor são obrigatorios.");
+        }
+
+    }
+
     public boolean ehCredor() {
-        throw new UnsupportedOperationException("H3 - nao implementado");
+        return valor.signum() > 0;
     }
 
     public boolean ehDevedor() {
-        throw new UnsupportedOperationException("H3 - nao implementado");
+        return valor.signum() < 0;
     }
 
     public boolean estaQuitado() {
-        throw new UnsupportedOperationException("H3 - nao implementado");
+        return valor.signum() == 0;
     }
 
     public BigDecimal valorAbsoluto() {
-        throw new UnsupportedOperationException("H3 - nao implementado");
+        return valor.abs();
     }
 
     /**
