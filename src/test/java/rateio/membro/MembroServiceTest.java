@@ -6,13 +6,15 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import java.util.Optional;
+
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+
 
 @ExtendWith(MockitoExtension.class)
 class MembroServiceTest {
@@ -73,4 +75,50 @@ class MembroServiceTest {
         assertEquals("ana@x.com", salvo.getEmail());
         assertEquals("hash", salvo.getHashSenha());
     }
+
+    @Test
+    void autenticarComEmailNulo(){
+        assertThrows(CredenciaisInvalidasException.class,
+                () -> servico.autenticar(null,   "123"));
+    }
+
+    @Test
+    void autenticarComSenhaNula(){
+        assertThrows(CredenciaisInvalidasException.class,
+                () -> servico.autenticar(" Ana@X.com ",   null));
+    }
+
+    @Test
+    void autenticarComEmailInexistente(){
+        when(repositorio.findByEmail("ana@x.com")).thenReturn(Optional.empty());
+
+        assertThrows(CredenciaisInvalidasException.class,
+                () -> servico.autenticar(" Ana@X.com ",   "123"));
+    }
+
+    @Test
+    void autenticarComSenhaInvalida(){
+        Membro membro = new Membro();
+        membro.setEmail("ana@x.com");
+        membro.setHashSenha("hash");
+        when(repositorio.findByEmail("ana@x.com")).thenReturn(Optional.of(membro));
+        when(encoder.matches("errada", "hash")).thenReturn(false);
+
+        assertThrows(CredenciaisInvalidasException.class,
+                () -> servico.autenticar("Ana@X.com", "errada"));
+    }
+
+    @Test
+    void autenticarComCredenciaisCorretas(){
+        Membro membro = new Membro();
+        membro.setEmail("ana@x.com");
+        membro.setHashSenha("hash");
+        when(repositorio.findByEmail("ana@x.com")).thenReturn(Optional.of(membro));
+        when(encoder.matches("123", "hash")).thenReturn(true);
+
+        Membro autenticado = servico.autenticar("  Ana@X.com ", "123");
+
+        assertEquals(membro, autenticado);
+    }
+
 }
