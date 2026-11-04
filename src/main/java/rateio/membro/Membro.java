@@ -10,8 +10,14 @@ public class Membro {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @Column(nullable = false)
     private String nome;
+
+    @Column(nullable = false, unique = true)
     private String email;
+
+    @Column(nullable = false)
+    private String hashSenha;
 
     public Membro(){}
 
@@ -23,4 +29,7 @@ public class Membro {
 
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
+
+    public String getHashSenha() {return hashSenha;}
+    public void setHashSenha(String hashSenha) {this.hashSenha = hashSenha;}
 }
