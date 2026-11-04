@@ -23,4 +23,10 @@ public class MembroController {
         Membro membro = servico.cadastrar(requisicao.nome(), requisicao.email(), requisicao.senha());
         return MembroResponse.de(membro);
     }
+
+    @PostMapping("/login")
+    public MembroResponse login(@RequestBody LoginRequest requisicao) {
+        Membro membro = servico.autenticar(requisicao.email(), requisicao.senha());
+        return MembroResponse.de(membro);
+    }
 }
