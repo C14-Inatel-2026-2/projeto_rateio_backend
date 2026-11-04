@@ -36,4 +36,21 @@ public class MembroService {
 
         return repositorio.save(membro);
     }
+
+    public Membro autenticar(String email, String senha) {
+        if (email == null || senha == null) {
+            throw new CredenciaisInvalidasException();
+        }
+
+        String emailNormalizado = email.trim().toLowerCase();
+
+        Membro membro = repositorio.findByEmail(emailNormalizado)
+                .orElseThrow(CredenciaisInvalidasException::new);
+
+        if (!encoder.matches(senha, membro.getHashSenha())) {
+            throw new CredenciaisInvalidasException();
+        }
+
+        return membro;
+    }
 }
