@@ -1,4 +1,177 @@
 package rateio.grupo;
 
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.Captor;
+import org.mockito.ArgumentCaptor;
+
+import rateio.membro.MembroNaoEncontradoException;
+import rateio.membro.MembroRepository;
+import rateio.membro.Membro;
+import java.util.Optional;
+import java.util.List;
+import java.util.UUID;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.any;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+@ExtendWith(MockitoExtension.class)
 public class GrupoServiceTest {
+
+    @Mock
+    private GrupoRepository grupoRepositorio;
+
+    @Mock
+    private GrupoMembroRepository participacaoRepositorio;
+
+    @Mock
+    private MembroRepository membroRepositorio;
+
+    @Captor
+    private ArgumentCaptor<List<GrupoMembroEntidade>> captor;
+
+    @InjectMocks
+    private GrupoService servico;
+
+    private final UUID criadorId = UUID.randomUUID();
+
+    @Test
+    void rejeitaCriarGrupoSemIdCriador(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.criar(null, "Viagem", List.of("maria@x.com", "joao@x.com")));
+    }
+
+    @Test
+    void rejeitaCriarGrupoComNomeNulo(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.criar(criadorId, null, List.of("maria@x.com", "joao@x.com")));
+    }
+
+    @Test
+    void rejeitaCriarGrupoComNomeEmBranco(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.criar(criadorId, "", List.of("maria@x.com", "joao@x.com")));
+    }
+
+    @Test
+    void rejeitaCriarGrupoComListaEmailsNula(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.criar(criadorId, "Viagem", null));
+    }
+
+    @Test
+    void rejeitaListaDeEmailsVazia() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.criar(criadorId, "Viagem", List.of()));
+    }
+
+    @Test
+    void rejeitaEmailEmBranco() {
+        Membro criador = new Membro();
+        criador.setId(criadorId);
+        criador.setEmail("ana@x.com");
+        when(membroRepositorio.findById(criadorId)).thenReturn(Optional.of(criador));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.criar(criadorId, "Viagem", List.of("")));
+    }
+
+    @Test
+    void rejeitaCriadorNaoCadastrado() {
+        when(membroRepositorio.findById(criadorId)).thenReturn(Optional.empty());
+
+        assertThrows(MembroNaoEncontradoException.class,
+                () -> servico.criar(criadorId, "Viagem", List.of("maria@x.com")));
+
+        verify(grupoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaEmailDoCriadorNaLista(){
+        Membro criador = new Membro();
+        criador.setId(criadorId);
+        criador.setEmail("ana@x.com");
+
+        when(membroRepositorio.findById(criadorId)).thenReturn(Optional.of(criador));
+
+        assertThrows(MembroRepetidoException.class,
+                () -> servico.criar(criadorId, "Viagem", List.of("ana@x.com")));
+
+        verify(grupoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaEmailRepetidoNaLista(){
+        Membro criador = new Membro();
+        criador.setId(criadorId);
+        criador.setEmail("ana@x.com");
+
+        when(membroRepositorio.findById(criadorId)).thenReturn(Optional.of(criador));
+
+        assertThrows(MembroRepetidoException.class,
+                () -> servico.criar(criadorId, "Viagem", List.of("maria@x.com", "maria@x.com")));
+
+        verify(grupoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaEmailSemCadastro() {
+        Membro criador = new Membro();
+        criador.setId(criadorId);
+        criador.setEmail("ana@x.com");
+
+        when(membroRepositorio.findById(criadorId)).thenReturn(Optional.of(criador));
+        when(membroRepositorio.findByEmail("maria@x.com")).thenReturn(Optional.empty());
+
+        assertThrows(MembroNaoEncontradoException.class,
+                () -> servico.criar(criadorId, "Viagem", List.of("Maria@X.com ")));
+
+        verify(grupoRepositorio, never()).save(any());
+        verify(participacaoRepositorio, never()).saveAll(any());
+    }
+
+    @Test
+    void criaGrupoValido() {
+        Membro criador = new Membro();
+        criador.setId(criadorId);
+        criador.setEmail("ana@x.com");
+
+        Membro maria = new Membro();
+        maria.setId(UUID.randomUUID());
+        maria.setEmail("maria@x.com");
+
+        Membro joao = new Membro();
+        joao.setId(UUID.randomUUID());
+        joao.setEmail("joao@x.com");
+
+        when(membroRepositorio.findById(criadorId)).thenReturn(Optional.of(criador));
+        when(membroRepositorio.findByEmail("maria@x.com")).thenReturn(Optional.of(maria));
+        when(membroRepositorio.findByEmail("joao@x.com")).thenReturn(Optional.of(joao));
+
+        GrupoEntidade grupo = servico.criar(criadorId, "  Viagem ", List.of(" Maria@X.com ", "joao@x.com"));
+
+        assertEquals("Viagem", grupo.getNome());
+        assertSame(criador, grupo.getCriador());
+        assertNotNull(grupo.getCriadoEm());
+
+        verify(grupoRepositorio).save(grupo);
+        verify(participacaoRepositorio).saveAll(captor.capture());
+        List<GrupoMembroEntidade> participacoes = captor.getValue();
+        assertEquals(3, participacoes.size());
+        assertEquals(List.of(criador, maria, joao),
+                participacoes.stream().map(GrupoMembroEntidade::getMembro).toList());
+        assertTrue(participacoes.stream().allMatch(p -> p.getGrupo() == grupo));
+    }
+
+
 }
