@@ -32,4 +32,8 @@ public class GrupoMembroEntidade {
 
     public Membro getMembro() {return membro;}
     public void setMembro(Membro membro) {this.membro = membro;}
+
+    public GrupoEntidade getGrupo() {return grupo;}
+    public void setGrupo(GrupoEntidade grupo) {this.grupo = grupo;}
+
 }
