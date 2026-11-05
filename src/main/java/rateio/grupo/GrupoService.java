@@ -41,7 +41,7 @@ public class GrupoService {
         Set<String> emailsNormalizados = new LinkedHashSet<>();
         for (String email : emails) {
             if (email == null || email.isBlank()) {
-                throw new IllegalArgumentException("Nome do grupo e ao menos um membro sao obrigatorios");
+                throw new IllegalArgumentException("Emails dos membros nao podem ser vazios");
             }
             String normalizado = email.trim().toLowerCase();
             if (normalizado.equals(criador.getEmail()) || !emailsNormalizados.add(normalizado)) {
