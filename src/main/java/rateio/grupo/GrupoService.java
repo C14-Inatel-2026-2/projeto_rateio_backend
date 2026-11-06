@@ -73,4 +73,23 @@ public class GrupoService {
 
         return grupo;
     }
+
+    @Transactional(readOnly = true)
+    public List<GrupoEntidade> listarDoMembro(UUID membroId){
+        if (membroId == null ) {
+            throw new IllegalArgumentException("membroId e obrigatorio");
+        }
+
+        boolean membroExiste = membroRepositorio.existsById(membroId);
+        if(!membroExiste){
+            throw new MembroNaoEncontradoException();
+        }
+
+        List<GrupoEntidade> grupos = new ArrayList<>();
+        for(GrupoMembroEntidade participacao : participacaoRepositorio.findByMembroId(membroId)){
+            grupos.add(participacao.getGrupoEntidade());
+        }
+
+        return grupos;
+    }
 }
