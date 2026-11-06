@@ -424,4 +424,143 @@ public class GrupoServiceTest {
         assertSame(maria, captorParticipacao.getValue().getMembro());
     }
 
+    @Test
+    void rejeitaGrupoIdNuloAoRemover(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.removerMembro(null, UUID.randomUUID(), UUID.randomUUID()));
+    }
+
+    @Test
+    void rejeitaMembroIdNuloAoRemover(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.removerMembro(UUID.randomUUID(), null, UUID.randomUUID()));
+    }
+
+    @Test
+    void rejeitaAlvoIdNuloAoRemover(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.removerMembro(UUID.randomUUID(), UUID.randomUUID(), null));
+    }
+
+    @Test
+    void rejeitaGrupoNaoEncontradoAoRemover(){
+        UUID grupoId = UUID.randomUUID();
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.removerMembro(grupoId, UUID.randomUUID(), UUID.randomUUID()));
+    }
+
+    @Test
+    void rejeitaQuemPedeForaDoGrupoAoRemover(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(false);
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.removerMembro(grupoId, membroId, UUID.randomUUID()));
+
+        verify(participacaoRepositorio, never()).findByGrupoId(any());
+        verify(participacaoRepositorio, never()).delete(any());
+    }
+
+    @Test
+    void rejeitaAlvoForaDoGrupoAoRemover(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+        UUID alvoId = UUID.randomUUID();
+
+        Membro ana = new Membro();
+        ana.setId(membroId);
+
+        Membro maria = new Membro();
+        maria.setId(UUID.randomUUID());
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoAna = new GrupoMembroEntidade();
+        participacaoAna.setMembro(ana);
+        GrupoMembroEntidade participacaoMaria = new GrupoMembroEntidade();
+        participacaoMaria.setMembro(maria);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(participacaoAna, participacaoMaria));
+
+        assertThrows(MembroNaoEncontradoException.class,
+                () -> servico.removerMembro(grupoId, membroId, alvoId));
+
+        verify(participacaoRepositorio, never()).delete(any());
+    }
+
+    @Test
+    void rejeitaGrupoComMenosDeDoisMembrosAoRemover(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+        UUID alvoId = UUID.randomUUID();
+
+        Membro ana = new Membro();
+        ana.setId(membroId);
+
+        Membro maria = new Membro();
+        maria.setId(alvoId);
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoAna = new GrupoMembroEntidade();
+        participacaoAna.setMembro(ana);
+        GrupoMembroEntidade participacaoMaria = new GrupoMembroEntidade();
+        participacaoMaria.setMembro(maria);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(participacaoAna, participacaoMaria));
+
+        assertThrows(GrupoComPoucosMembrosException.class,
+                () -> servico.removerMembro(grupoId, membroId, alvoId));
+
+        verify(participacaoRepositorio, never()).delete(any());
+    }
+
+    @Test
+    void removeMembroDoGrupo(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+        UUID alvoId = UUID.randomUUID();
+
+        Membro ana = new Membro();
+        ana.setId(membroId);
+
+        Membro maria = new Membro();
+        maria.setId(alvoId);
+
+        Membro joao = new Membro();
+        joao.setId(UUID.randomUUID());
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoAna = new GrupoMembroEntidade();
+        participacaoAna.setMembro(ana);
+        GrupoMembroEntidade participacaoMaria = new GrupoMembroEntidade();
+        participacaoMaria.setMembro(maria);
+        GrupoMembroEntidade participacaoJoao = new GrupoMembroEntidade();
+        participacaoJoao.setMembro(joao);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByGrupoId(grupoId))
+                .thenReturn(List.of(participacaoAna, participacaoMaria, participacaoJoao));
+        when(participacaoRepositorio.findByGrupoIdAndMembroId(grupoId, alvoId))
+                .thenReturn(Optional.of(participacaoMaria));
+
+        servico.removerMembro(grupoId, membroId, alvoId);
+
+        verify(participacaoRepositorio).delete(participacaoMaria);
+    }
+
 }
