@@ -30,7 +30,7 @@ public class GrupoService {
     }
 
     @Transactional
-    public GrupoEntidade criar(UUID criadorId, String nome, List<String> emails) {
+    public GrupoDetalhe criar(UUID criadorId, String nome, List<String> emails) {
         if (criadorId == null || nome == null || nome.isBlank()
                 || emails == null || emails.isEmpty()) {
             throw new IllegalArgumentException("Nome do grupo e ao menos um membro sao obrigatorios");
@@ -72,7 +72,8 @@ public class GrupoService {
         }
         participacaoRepositorio.saveAll(participacoes);
 
-        return grupo;
+        GrupoDetalhe grupoDetalhe = new GrupoDetalhe(grupo, participantes);
+        return grupoDetalhe;
     }
 
     @Transactional(readOnly = true)
