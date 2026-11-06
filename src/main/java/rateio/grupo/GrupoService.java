@@ -156,4 +156,39 @@ public class GrupoService {
         return novoMembro;
     }
 
+    @Transactional
+    public void removerMembro(UUID grupoId, UUID membroId, UUID alvoId) {
+        if (grupoId == null || membroId == null || alvoId == null) {
+            throw new IllegalArgumentException("GrupoId, membroId e alvoId sao obrigatorios");
+        }
+
+        GrupoEntidade grupo = grupoRepositorio.findById(grupoId)
+                .orElseThrow(GrupoNaoEncontradoException::new);
+
+        boolean membroPertence = participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId);
+        if (!membroPertence) {
+            throw new GrupoNaoEncontradoException();
+        }
+
+        Set<UUID> idsAtuais = new HashSet<>();
+        for (GrupoMembroEntidade participacao : participacaoRepositorio.findByGrupoId(grupoId)) {
+            idsAtuais.add(participacao.getMembro().getId());
+        }
+
+        Grupo dominio = new Grupo(grupo.getNome(), idsAtuais);
+        try {
+            dominio.removerMembro(alvoId);
+        } catch (IllegalArgumentException e) {
+            throw new MembroNaoEncontradoException();
+        }
+
+        if (dominio.getQuantidadeDeMembros() < 2) {
+            throw new GrupoComPoucosMembrosException();
+        }
+
+        GrupoMembroEntidade participacaoAlvo = participacaoRepositorio.findByGrupoIdAndMembroId(grupoId, alvoId)
+                .orElseThrow(MembroNaoEncontradoException::new);
+        participacaoRepositorio.delete(participacaoAlvo);
+    }
+
 }

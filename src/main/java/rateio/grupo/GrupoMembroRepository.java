@@ -4,6 +4,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.Optional;
+
 
 public interface GrupoMembroRepository extends JpaRepository<GrupoMembroEntidade, UUID> {
 
@@ -12,4 +14,6 @@ public interface GrupoMembroRepository extends JpaRepository<GrupoMembroEntidade
     List<GrupoMembroEntidade> findByMembroId(UUID membroId);
 
     List<GrupoMembroEntidade> findByGrupoId(UUID grupoId);
+
+    Optional<GrupoMembroEntidade> findByGrupoIdAndMembroId(UUID grupoId, UUID membroId);
 }
