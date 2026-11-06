@@ -92,4 +92,30 @@ public class GrupoService {
 
         return grupos;
     }
+
+    @Transactional(readOnly = true)
+    public GrupoDetalhe buscarDetalhe(UUID grupoId, UUID membroId){
+        if (grupoId == null || membroId == null ) {
+            throw new IllegalArgumentException("grupoId e membroId sao obrigatorios");
+        }
+
+        GrupoEntidade grupo = grupoRepositorio.findById(grupoId)
+                .orElseThrow(GrupoNaoEncontradoException::new);
+
+        boolean membroPertence = participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId);
+        if(!membroPertence){
+            throw new GrupoNaoEncontradoException();
+        }
+
+        List<Membro> membros = new ArrayList<>();
+        for (GrupoMembroEntidade participacao : participacaoRepositorio.findByGrupoId(grupoId)){
+            membros.add(participacao.getMembro());
+        }
+
+        GrupoDetalhe grupoDetalhe = new GrupoDetalhe(grupo, membros);
+        return grupoDetalhe;
+
+    }
+
+
 }
