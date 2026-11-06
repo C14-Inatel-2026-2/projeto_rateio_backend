@@ -301,4 +301,127 @@ public class GrupoServiceTest {
         assertEquals(List.of(maria, joao, lucas), detalhe.membros());
     }
 
+    @Test
+    void rejeitaGrupoIdNuloAoAdicionar(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.adicionarMembro(null, UUID.randomUUID(), "maria@x.com"));
+    }
+
+    @Test
+    void rejeitaMembroIdNuloAoAdicionar(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.adicionarMembro(UUID.randomUUID(), null, "maria@x.com"));
+    }
+
+    @Test
+    void rejeitaEmailNuloAoAdicionar(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.adicionarMembro(UUID.randomUUID(), UUID.randomUUID(), null));
+    }
+
+    @Test
+    void rejeitaEmailEmBrancoAoAdicionar(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.adicionarMembro(UUID.randomUUID(), UUID.randomUUID(), "   "));
+    }
+
+    @Test
+    void rejeitaGrupoNaoEncontradoAoAdicionar(){
+        UUID grupoId = UUID.randomUUID();
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.adicionarMembro(grupoId, UUID.randomUUID(), "maria@x.com"));
+    }
+
+    @Test
+    void rejeitaQuemPedeForaDoGrupoAoAdicionar(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(false);
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.adicionarMembro(grupoId, membroId, "maria@x.com"));
+
+        verify(membroRepositorio, never()).findByEmail(any());
+        verify(participacaoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaEmailNaoCadastradoAoAdicionar(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(membroRepositorio.findByEmail("maria@x.com")).thenReturn(Optional.empty());
+
+        assertThrows(MembroNaoEncontradoException.class,
+                () -> servico.adicionarMembro(grupoId, membroId, " Maria@X.com "));
+
+        verify(participacaoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaMembroJaPertencenteAoGrupo(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        Membro maria = new Membro();
+        maria.setId(UUID.randomUUID());
+        maria.setEmail("maria@x.com");
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoMaria = new GrupoMembroEntidade();
+        participacaoMaria.setMembro(maria);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(membroRepositorio.findByEmail("maria@x.com")).thenReturn(Optional.of(maria));
+        when(participacaoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(participacaoMaria));
+
+        assertThrows(MembroRepetidoException.class,
+                () -> servico.adicionarMembro(grupoId, membroId, "maria@x.com"));
+
+        verify(participacaoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void adicionaMembroAoGrupo(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        Membro joao = new Membro();
+        joao.setId(UUID.randomUUID());
+        joao.setEmail("joao@x.com");
+
+        Membro maria = new Membro();
+        maria.setId(UUID.randomUUID());
+        maria.setEmail("maria@x.com");
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoJoao = new GrupoMembroEntidade();
+        participacaoJoao.setMembro(joao);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(membroRepositorio.findByEmail("maria@x.com")).thenReturn(Optional.of(maria));
+        when(participacaoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(participacaoJoao));
+
+        Membro adicionado = servico.adicionarMembro(grupoId, membroId, " Maria@X.com ");
+
+        ArgumentCaptor<GrupoMembroEntidade> captorParticipacao = ArgumentCaptor.forClass(GrupoMembroEntidade.class);
+        verify(participacaoRepositorio).save(captorParticipacao.capture());
+
+        assertSame(maria, adicionado);
+        assertSame(grupo, captorParticipacao.getValue().getGrupoEntidade());
+        assertSame(maria, captorParticipacao.getValue().getMembro());
+    }
+
 }
