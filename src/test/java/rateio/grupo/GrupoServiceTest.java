@@ -11,6 +11,8 @@ import org.mockito.ArgumentCaptor;
 import rateio.membro.MembroNaoEncontradoException;
 import rateio.membro.MembroRepository;
 import rateio.membro.Membro;
+
+import java.time.Instant;
 import java.util.Optional;
 import java.util.List;
 import java.util.UUID;
@@ -172,6 +174,62 @@ public class GrupoServiceTest {
                 participacoes.stream().map(GrupoMembroEntidade::getMembro).toList());
         assertTrue(participacoes.stream().allMatch(p -> p.getGrupo() == grupo));
     }
+
+    @Test
+    void rejeitaListarGruposComMembroIdNulo(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.listarDoMembro(null));
+    }
+
+    @Test
+    void rejeitaListarGruposComMembroNaoCadastrado(){
+        assertThrows(MembroNaoEncontradoException.class,
+                () -> servico.listarDoMembro(UUID.randomUUID()));
+    }
+
+    @Test
+    void ListaVaziaSemGrupos(){
+        UUID membroId = UUID.randomUUID();
+        Membro membro = new Membro();
+        membro.setId(membroId);
+
+        when(membroRepositorio.existsById(membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByMembroId(membroId)).thenReturn(List.of());
+
+        assertTrue(servico.listarDoMembro(membroId).isEmpty());
+    }
+
+    @Test
+    void ListaComGrupos() {
+        UUID membroId = UUID.randomUUID();
+        Membro criador = new Membro();
+        criador.setId(membroId);
+
+        GrupoMembroEntidade viagem = new GrupoMembroEntidade();
+        GrupoEntidade viagemGrupo = new GrupoEntidade();
+        viagemGrupo.setId(UUID.randomUUID());
+        viagem.setGrupoEntidade(viagemGrupo);
+
+        GrupoMembroEntidade cinema = new GrupoMembroEntidade();
+        GrupoEntidade cinemaGrupo = new GrupoEntidade();
+        cinemaGrupo.setId(UUID.randomUUID());
+        cinema.setGrupoEntidade(cinemaGrupo);
+
+        GrupoMembroEntidade parque = new GrupoMembroEntidade();
+        GrupoEntidade parqueGrupo = new GrupoEntidade();
+        parqueGrupo.setId(UUID.randomUUID());
+        parque.setGrupoEntidade(parqueGrupo);
+
+        when(membroRepositorio.existsById(membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByMembroId(membroId)).thenReturn(List.of(viagem, cinema, parque));
+
+        assertEquals(servico.listarDoMembro(membroId), List.of(viagem.getGrupoEntidade(), cinema.getGrupoEntidade(), parque.getGrupoEntidade()));
+
+    }
+
+
+
+
 
 
 }
