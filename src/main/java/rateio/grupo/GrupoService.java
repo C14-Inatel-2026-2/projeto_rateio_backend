@@ -12,6 +12,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.HashSet;
 
 @Service
 public class GrupoService {
@@ -117,5 +118,42 @@ public class GrupoService {
 
     }
 
+    @Transactional
+    public Membro adicionarMembro(UUID grupoId, UUID membroId, String email) {
+        if (grupoId == null || membroId == null || email == null || email.isBlank()) {
+            throw new IllegalArgumentException("Email, membroId e grupoId sao obrigatorios");
+        }
+
+        GrupoEntidade grupo = grupoRepositorio.findById(grupoId)
+                .orElseThrow(GrupoNaoEncontradoException::new);
+
+        boolean membroPertence = participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId);
+        if(!membroPertence){
+            throw new GrupoNaoEncontradoException();
+        }
+
+        String normalizado = email.trim().toLowerCase();
+        Membro novoMembro = membroRepositorio.findByEmail(normalizado)
+                .orElseThrow(MembroNaoEncontradoException::new);
+
+        Set<UUID> idsAtuais = new HashSet<>();
+        for (GrupoMembroEntidade participacao : participacaoRepositorio.findByGrupoId(grupoId)) {
+            idsAtuais.add(participacao.getMembro().getId());
+        }
+
+        Grupo dominio = new Grupo(grupo.getNome(), idsAtuais);
+        try {
+            dominio.adicionarMembro(novoMembro.getId());
+        } catch (IllegalStateException e) {
+            throw new MembroRepetidoException();
+        }
+
+        GrupoMembroEntidade novaParticipacao = new GrupoMembroEntidade();
+        novaParticipacao.setGrupoEntidade(grupo);
+        novaParticipacao.setMembro(novoMembro);
+        participacaoRepositorio.save(novaParticipacao);
+
+        return novoMembro;
+    }
 
 }
