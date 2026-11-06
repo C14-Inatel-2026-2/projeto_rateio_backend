@@ -227,9 +227,78 @@ public class GrupoServiceTest {
 
     }
 
+    @Test
+    void rejeitaGrupoIdNulo(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.buscarDetalhe(null, UUID.randomUUID()));
+    }
 
+    @Test
+    void rejeitaMembroIdNulo(){
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.buscarDetalhe(UUID.randomUUID(), null));
+    }
 
+    @Test
+    void rejeitaGrupoNaoEncontrado(){
 
+        UUID grupoId = UUID.randomUUID();
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
 
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.buscarDetalhe(grupoId, UUID.randomUUID()));
+    }
+
+    @Test
+    void rejeitaMembroNaoPertenceAoGrupo(){
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId,membroId)).thenReturn(false);
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.buscarDetalhe(grupoId, membroId));
+
+        verify(participacaoRepositorio, never()).findByGrupoId(any());
+    }
+
+    @Test
+    void buscaDetalheDoGrupo() {
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+
+        Membro maria = new Membro();
+        maria.setId(UUID.randomUUID());
+        maria.setEmail("maria@x.com");
+
+        Membro joao = new Membro();
+        joao.setId(UUID.randomUUID());
+        joao.setEmail("joao@x.com");
+
+        Membro lucas = new Membro();
+        lucas.setId(UUID.randomUUID());
+        lucas.setEmail("lucas@x.com");
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoMaria = new GrupoMembroEntidade();
+        participacaoMaria.setMembro(maria);
+        GrupoMembroEntidade participacaoJoao = new GrupoMembroEntidade();
+        participacaoJoao.setMembro(joao);
+        GrupoMembroEntidade participacaoLucas = new GrupoMembroEntidade();
+        participacaoLucas.setMembro(lucas);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByGrupoId(grupoId))
+                .thenReturn(List.of(participacaoMaria, participacaoJoao, participacaoLucas));
+
+        GrupoDetalhe detalhe = servico.buscarDetalhe(grupoId, membroId);
+
+        assertSame(grupo, detalhe.grupo());
+        assertEquals(List.of(maria, joao, lucas), detalhe.membros());
+    }
 
 }
