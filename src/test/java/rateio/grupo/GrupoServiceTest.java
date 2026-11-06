@@ -160,11 +160,13 @@ public class GrupoServiceTest {
         when(membroRepositorio.findByEmail("maria@x.com")).thenReturn(Optional.of(maria));
         when(membroRepositorio.findByEmail("joao@x.com")).thenReturn(Optional.of(joao));
 
-        GrupoEntidade grupo = servico.criar(criadorId, "  Viagem ", List.of(" Maria@X.com ", "joao@x.com"));
+        GrupoDetalhe detalhe = servico.criar(criadorId, "  Viagem ", List.of(" Maria@X.com ", "joao@x.com"));
+        GrupoEntidade grupo = detalhe.grupo();
 
         assertEquals("Viagem", grupo.getNome());
         assertSame(criador, grupo.getCriador());
         assertNotNull(grupo.getCriadoEm());
+        assertEquals(List.of(criador, maria, joao), detalhe.membros());
 
         verify(grupoRepositorio).save(grupo);
         verify(participacaoRepositorio).saveAll(captor.capture());
