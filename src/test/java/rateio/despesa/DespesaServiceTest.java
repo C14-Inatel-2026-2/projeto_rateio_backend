@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -440,4 +441,85 @@ public class DespesaServiceTest {
         assertEquals(new BigDecimal("70.00"), parcelas.get(1).getValor());
         assertEquals(Despesa.EstrategiaDivisao.VALORES_FIXOS, detalhe.estrategia());
     }
+    @Test
+    void rejeitaMembroIdNuloAoListar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.listar(null, grupoId));
+    }
+
+    @Test
+    void rejeitaGrupoIdNuloAoListar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.listar(registradorId, null));
+    }
+
+    @Test
+    void rejeitaGrupoNaoEncontradoAoListar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.listar(registradorId, grupoId));
+
+        verify(despesaRepositorio, never()).findByGrupoId(any());
+    }
+
+    @Test
+    void rejeitaQuemPedeForaDoGrupoAoListar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(false);
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.listar(registradorId, grupoId));
+
+        verify(despesaRepositorio, never()).findByGrupoId(any());
+    }
+
+    @Test
+    void devolveListaVaziaQuandoGrupoNaoTemDespesas() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(despesaRepositorio.findByGrupoId(grupoId)).thenReturn(List.of());
+
+        List<DespesaResumo> resumos = servico.listar(registradorId, grupoId);
+
+        assertTrue(resumos.isEmpty());
+    }
+
+    @Test
+    void listaDespesasDoGrupo() {
+        Membro pagador = membro(pagadorId);
+
+        DespesaEntidade jantar = new DespesaEntidade();
+        jantar.setId(UUID.randomUUID());
+        jantar.setDescricao("Jantar");
+        jantar.setValorTotal(new BigDecimal("100.00"));
+        jantar.setPagador(pagador);
+        jantar.setStatus(StatusDespesa.ATIVA);
+        jantar.setCriadaEm(Instant.parse("2026-11-04T20:15:00Z"));
+
+        DespesaEntidade mercado = new DespesaEntidade();
+        mercado.setId(UUID.randomUUID());
+        mercado.setDescricao("Mercado");
+        mercado.setValorTotal(new BigDecimal("50.00"));
+        mercado.setPagador(pagador);
+        mercado.setStatus(StatusDespesa.ESTORNADA);
+        mercado.setCriadaEm(Instant.parse("2026-11-05T10:00:00Z"));
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(despesaRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(jantar, mercado));
+
+        List<DespesaResumo> resumos = servico.listar(registradorId, grupoId);
+
+        assertEquals(2, resumos.size());
+        assertEquals(jantar.getId(), resumos.get(0).id());
+        assertEquals("Jantar", resumos.get(0).descricao());
+        assertEquals(new BigDecimal("100.00"), resumos.get(0).valorTotal());
+        assertEquals(pagadorId, resumos.get(0).pagadorId());
+        assertEquals(StatusDespesa.ATIVA, resumos.get(0).status());
+        assertEquals(Instant.parse("2026-11-04T20:15:00Z"), resumos.get(0).data());
+        assertEquals(mercado.getId(), resumos.get(1).id());
+        assertEquals(StatusDespesa.ESTORNADA, resumos.get(1).status());
+    }
+
 }
