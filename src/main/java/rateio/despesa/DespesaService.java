@@ -169,4 +169,32 @@ public class DespesaService {
 
         return despesaDetalhe;
     }
+
+    @Transactional(readOnly = true)
+    public List<DespesaResumo> listar(UUID membroId, UUID grupoId){
+        if (membroId == null || grupoId == null ) {
+            throw new IllegalArgumentException("grupoId e membroId sao obrigatorios");
+        }
+
+        grupoRepositorio.findById(grupoId).orElseThrow(GrupoNaoEncontradoException::new);
+
+        boolean membroPertence = participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId);
+        if(!membroPertence){
+            throw new GrupoNaoEncontradoException();
+        }
+
+        List<DespesaResumo> despesasResumo = new ArrayList<>();
+        for (DespesaEntidade despesa : despesaRepositorio.findByGrupoId(grupoId)) {
+            despesasResumo.add(new DespesaResumo(
+                    despesa.getId(),
+                    despesa.getDescricao(),
+                    despesa.getValorTotal(),
+                    despesa.getPagador().getId(),
+                    despesa.getStatus(),
+                    despesa.getCriadaEm()));
+        }
+        return despesasResumo;
+
+    }
+
 }
