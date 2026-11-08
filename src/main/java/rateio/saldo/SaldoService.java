@@ -12,6 +12,10 @@ import rateio.grupo.GrupoMembroRepository;
 import rateio.grupo.GrupoNaoEncontradoException;
 import rateio.grupo.GrupoRepository;
 import rateio.membro.Membro;
+import rateio.pagamento.Pagamento;
+import rateio.pagamento.PagamentoEntidade;
+import rateio.pagamento.PagamentoRepository;
+import rateio.pagamento.StatusPagamento;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,13 +32,15 @@ public class SaldoService {
     private final GrupoRepository grupoRepositorio;
     private final GrupoMembroRepository participacaoRepositorio;
     private final ParcelaRepository parcelaRepositorio;
+    private final PagamentoRepository pagamentoRepositorio;
 
     public SaldoService(GrupoRepository grupoRepositorio,
                         GrupoMembroRepository participacaoRepositorio,
-                        ParcelaRepository parcelaRepositorio) {
+                        ParcelaRepository parcelaRepositorio, PagamentoRepository pagamentoRepositorio) {
         this.grupoRepositorio = grupoRepositorio;
         this.participacaoRepositorio = participacaoRepositorio;
         this.parcelaRepositorio = parcelaRepositorio;
+        this.pagamentoRepositorio = pagamentoRepositorio;
     }
 
     @Transactional(readOnly = true)
@@ -90,8 +96,17 @@ public class SaldoService {
                     parcelasDaDespesa));
         }
 
+        List<Pagamento> pagamentosDominio = new ArrayList<>();
+        for (PagamentoEntidade pagamento : pagamentoRepositorio.findByGrupoIdAndStatus(grupoId, StatusPagamento.ATIVO)) {
+            pagamentosDominio.add(new Pagamento(
+                    grupoId,
+                    pagamento.getDe().getId(),
+                    pagamento.getPara().getId(),
+                    pagamento.getValor()));
+        }
+
         List<SaldoDetalhe> resposta = new ArrayList<>();
-        for (Saldo saldo : Saldo.consolidar(idsDosMembros, despesasDominio, List.of())) {
+        for (Saldo saldo : Saldo.consolidar(idsDosMembros, despesasDominio, pagamentosDominio)) {
             resposta.add(new SaldoDetalhe(
                     saldo.membroId(),
                     nomes.get(saldo.membroId()),
