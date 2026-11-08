@@ -8,6 +8,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.Captor;
 import org.mockito.ArgumentCaptor;
 
+import rateio.despesa.DespesaRepository;
 import rateio.membro.MembroNaoEncontradoException;
 import rateio.membro.MembroRepository;
 import rateio.membro.Membro;
@@ -38,6 +39,9 @@ public class GrupoServiceTest {
 
     @Mock
     private MembroRepository membroRepositorio;
+
+    @Mock
+    private DespesaRepository despesaRepositorio;
 
     @Captor
     private ArgumentCaptor<List<GrupoMembroEntidade>> captor;
@@ -523,6 +527,41 @@ public class GrupoServiceTest {
         when(participacaoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(participacaoAna, participacaoMaria));
 
         assertThrows(GrupoComPoucosMembrosException.class,
+                () -> servico.removerMembro(grupoId, membroId, alvoId));
+
+        verify(participacaoRepositorio, never()).delete(any());
+    }
+
+    @Test
+    void rejeitaGrupoComDespesaAoRemover() {
+        UUID grupoId = UUID.randomUUID();
+        UUID membroId = UUID.randomUUID();
+        UUID alvoId = UUID.randomUUID();
+
+        Membro ana = new Membro();
+        ana.setId(membroId);
+        Membro maria = new Membro();
+        maria.setId(alvoId);
+        Membro joao = new Membro();
+        joao.setId(UUID.randomUUID());
+
+        GrupoEntidade grupo = new GrupoEntidade();
+        grupo.setNome("Viagem");
+
+        GrupoMembroEntidade participacaoAna = new GrupoMembroEntidade();
+        participacaoAna.setMembro(ana);
+        GrupoMembroEntidade participacaoMaria = new GrupoMembroEntidade();
+        participacaoMaria.setMembro(maria);
+        GrupoMembroEntidade participacaoJoao = new GrupoMembroEntidade();
+        participacaoJoao.setMembro(joao);
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(grupo));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)).thenReturn(true);
+        when(participacaoRepositorio.findByGrupoId(grupoId))
+                .thenReturn(List.of(participacaoAna, participacaoMaria, participacaoJoao));
+        when(despesaRepositorio.existsByGrupoId(grupoId)).thenReturn(true);
+
+        assertThrows(GrupoComDespesasException.class,
                 () -> servico.removerMembro(grupoId, membroId, alvoId));
 
         verify(participacaoRepositorio, never()).delete(any());

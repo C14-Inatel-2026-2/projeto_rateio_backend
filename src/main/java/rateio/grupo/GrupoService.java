@@ -2,6 +2,7 @@ package rateio.grupo;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rateio.despesa.DespesaRepository;
 import rateio.membro.Membro;
 import rateio.membro.MembroNaoEncontradoException;
 import rateio.membro.MembroRepository;
@@ -20,13 +21,16 @@ public class GrupoService {
     private final GrupoRepository grupoRepositorio;
     private final GrupoMembroRepository participacaoRepositorio;
     private final MembroRepository membroRepositorio;
+    private final DespesaRepository despesaRepositorio;
 
     public GrupoService(GrupoRepository grupoRepositorio,
                         GrupoMembroRepository participacaoRepositorio,
-                        MembroRepository membroRepositorio) {
+                        MembroRepository membroRepositorio,
+                        DespesaRepository despesaRepositorio) {
         this.grupoRepositorio = grupoRepositorio;
         this.participacaoRepositorio = participacaoRepositorio;
         this.membroRepositorio = membroRepositorio;
+        this.despesaRepositorio = despesaRepositorio;
     }
 
     @Transactional
@@ -185,6 +189,10 @@ public class GrupoService {
 
         if (dominio.getQuantidadeDeMembros() < 2) {
             throw new GrupoComPoucosMembrosException();
+        }
+
+        if (despesaRepositorio.existsByGrupoId(grupoId)) {
+            throw new GrupoComDespesasException();
         }
 
         GrupoMembroEntidade participacaoAlvo = participacaoRepositorio.findByGrupoIdAndMembroId(grupoId, alvoId)

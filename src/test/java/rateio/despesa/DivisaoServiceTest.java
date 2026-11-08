@@ -4,10 +4,17 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.UUID;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class DivisaoServiceTest {
+
+    private final DivisaoService servico = new DivisaoService();
 
     @Test
     public void testarDivisaoCemPorTres() {
@@ -36,4 +43,138 @@ public class DivisaoServiceTest {
 
         assertEquals(valorTotal, somaDasParcelas);
     }
+
+    @Test
+    void rejeitaValorNuloNaDivisaoPorPeso() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("1"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(null, pesos));
+    }
+
+    @Test
+    void rejeitaValorZeroNaDivisaoPorPeso() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("1"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(BigDecimal.ZERO, pesos));
+    }
+
+    @Test
+    void rejeitaMapaNuloNaDivisaoPorPeso() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(new BigDecimal("10.00"), null));
+    }
+
+    @Test
+    void rejeitaMapaVazioNaDivisaoPorPeso() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(new BigDecimal("10.00"), new LinkedHashMap<>()));
+    }
+
+    @Test
+    void rejeitaPesoNulo() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), null);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(new BigDecimal("10.00"), pesos));
+    }
+
+    @Test
+    void rejeitaPesoZero() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), BigDecimal.ZERO);
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(new BigDecimal("10.00"), pesos));
+    }
+
+    @Test
+    void rejeitaPesoNegativo() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("-1"));
+
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.dividirPorPeso(new BigDecimal("10.00"), pesos));
+    }
+
+    @Test
+    void dividePorPesoUmEDois() {
+        UUID a = UUID.randomUUID();
+        UUID b = UUID.randomUUID();
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(a, new BigDecimal("1"));
+        pesos.put(b, new BigDecimal("2"));
+
+        List<Despesa.Parcela> parcelas = servico.dividirPorPeso(new BigDecimal("100.00"), pesos);
+
+        assertEquals(a, parcelas.get(0).membroId());
+        assertEquals(new BigDecimal("33.33"), parcelas.get(0).valor());
+        assertEquals(b, parcelas.get(1).membroId());
+        assertEquals(new BigDecimal("66.67"), parcelas.get(1).valor());
+    }
+
+    @Test
+    void sobraVaiParaQuemAparecePrimeiroNoEmpate() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("1"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("1"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("1"));
+
+        List<Despesa.Parcela> parcelas = servico.dividirPorPeso(new BigDecimal("10.00"), pesos);
+
+        assertEquals(new BigDecimal("3.34"), parcelas.get(0).valor());
+        assertEquals(new BigDecimal("3.33"), parcelas.get(1).valor());
+        assertEquals(new BigDecimal("3.33"), parcelas.get(2).valor());
+    }
+
+    @Test
+    void sobraVaiParaMaiorResto() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("1"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("2"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("3"));
+
+        List<Despesa.Parcela> parcelas = servico.dividirPorPeso(new BigDecimal("100.00"), pesos);
+
+        assertEquals(new BigDecimal("16.67"), parcelas.get(0).valor());
+        assertEquals(new BigDecimal("33.33"), parcelas.get(1).valor());
+        assertEquals(new BigDecimal("50.00"), parcelas.get(2).valor());
+    }
+
+    @Test
+    void dividePorPesoDecimal() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("0.5"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("1.5"));
+
+        List<Despesa.Parcela> parcelas = servico.dividirPorPeso(new BigDecimal("10.00"), pesos);
+
+        assertEquals(new BigDecimal("2.50"), parcelas.get(0).valor());
+        assertEquals(new BigDecimal("7.50"), parcelas.get(1).valor());
+    }
+
+    @Test
+    void parcelasDePesoSomamExatamenteOTotal() {
+        Map<UUID, BigDecimal> pesos = new LinkedHashMap<>();
+        pesos.put(UUID.randomUUID(), new BigDecimal("3"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("7"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("11"));
+        pesos.put(UUID.randomUUID(), new BigDecimal("13"));
+        BigDecimal total = new BigDecimal("99.99");
+
+        List<Despesa.Parcela> parcelas = servico.dividirPorPeso(total, pesos);
+
+        BigDecimal soma = BigDecimal.ZERO;
+        for (Despesa.Parcela parcela : parcelas) {
+            soma = soma.add(parcela.valor());
+        }
+        assertEquals(0, total.compareTo(soma));
+    }
+
+
+
 }
