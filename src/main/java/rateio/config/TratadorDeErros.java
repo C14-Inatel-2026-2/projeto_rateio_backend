@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import rateio.membro.EmailJaCadastradoException;
 import rateio.membro.CredenciaisInvalidasException;
 
@@ -13,6 +14,8 @@ import rateio.grupo.GrupoComPoucosMembrosException;
 import rateio.grupo.GrupoNaoEncontradoException;
 import rateio.grupo.MembroRepetidoException;
 import rateio.membro.MembroNaoEncontradoException;
+import rateio.despesa.DespesaJaEstornadaException;
+import rateio.despesa.DespesaNaoEncontradaException;
 
 
 @RestControllerAdvice
@@ -58,5 +61,23 @@ public class TratadorDeErros {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErroResponse parametroInvalido(MethodArgumentTypeMismatchException e) {
         return new ErroResponse(e.getName() + " invalido");
+    }
+
+    @ExceptionHandler(DespesaNaoEncontradaException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErroResponse despesaNaoEncontrada(DespesaNaoEncontradaException e) {
+        return new ErroResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(DespesaJaEstornadaException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErroResponse despesaJaEstornada(DespesaJaEstornadaException e) {
+        return new ErroResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErroResponse corpoInvalido(HttpMessageNotReadableException e) {
+        return new ErroResponse("Corpo da requisicao invalido");
     }
 }
