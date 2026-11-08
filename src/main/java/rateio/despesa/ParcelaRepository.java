@@ -8,4 +8,6 @@ import java.util.List;
 public interface ParcelaRepository extends JpaRepository<ParcelaEntidade, UUID> {
 
     List<ParcelaEntidade> findByDespesaId(UUID despesaId);
+
+    List<ParcelaEntidade> findByDespesaGrupoIdAndDespesaStatus(UUID grupoId, StatusDespesa status);
 }
