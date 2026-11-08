@@ -522,4 +522,107 @@ public class DespesaServiceTest {
         assertEquals(StatusDespesa.ESTORNADA, resumos.get(1).status());
     }
 
+    @Test
+    void rejeitaMembroIdNuloAoEstornar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.estornar(grupoId, outroId, null));
+    }
+
+    @Test
+    void rejeitaGrupoIdNuloAoEstornar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.estornar(null, outroId, registradorId ));
+    }
+
+    @Test
+    void rejeitaDespesaIdNuloAoEstornar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.estornar(grupoId, null, registradorId ));
+    }
+
+    @Test
+    void rejeitaGrupoNaoEncontradoAoEstornar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(DespesaNaoEncontradaException.class,
+                () -> servico.estornar(grupoId, outroId, registradorId));
+
+        verify(despesaRepositorio, never()).findByIdAndGrupoId(any(), any());
+        verify(participacaoRepositorio, never()).existsByGrupoIdAndMembroId(any(), any());
+    }
+
+    @Test
+    void rejeitaQuemPedeForaDoGrupoAoEstornar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(false);
+
+        assertThrows(DespesaNaoEncontradaException.class,
+                () -> servico.estornar(grupoId, outroId, registradorId));
+
+        verify(despesaRepositorio, never()).findByIdAndGrupoId(any(), any());
+    }
+
+    @Test
+    void rejeitaDespesaNaoEncontradaAoEstornar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(despesaRepositorio.findByIdAndGrupoId(outroId, grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(DespesaNaoEncontradaException.class,
+                () -> servico.estornar(grupoId, outroId, registradorId));
+
+        verify(despesaRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaDespesaJaEstornada() {
+        DespesaEntidade despesa = new DespesaEntidade();
+        despesa.setId(outroId);
+        despesa.setStatus(StatusDespesa.ESTORNADA);
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(despesaRepositorio.findByIdAndGrupoId(outroId, grupoId)).thenReturn(Optional.of(despesa));
+
+        assertThrows(DespesaJaEstornadaException.class,
+                () -> servico.estornar(grupoId, outroId, registradorId));
+
+        verify(despesaRepositorio, never()).save(any());
+    }
+
+    @Test
+    void estornaDespesa() {
+        UUID despesaId = UUID.randomUUID();
+        Membro pagador = membro(pagadorId);
+        Membro outro = membro(outroId);
+
+        DespesaEntidade despesa = new DespesaEntidade();
+        despesa.setId(despesaId);
+        despesa.setPagador(pagador);
+        despesa.setDescricao("Jantar");
+        despesa.setValorTotal(new BigDecimal("100.00"));
+        despesa.setEstrategia(Despesa.EstrategiaDivisao.IGUAL);
+        despesa.setStatus(StatusDespesa.ATIVA);
+
+        ParcelaEntidade parcelaPagador = new ParcelaEntidade();
+        parcelaPagador.setMembro(pagador);
+        parcelaPagador.setValor(new BigDecimal("50.00"));
+        ParcelaEntidade parcelaOutro = new ParcelaEntidade();
+        parcelaOutro.setMembro(outro);
+        parcelaOutro.setValor(new BigDecimal("50.00"));
+
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(despesaRepositorio.findByIdAndGrupoId(despesaId, grupoId)).thenReturn(Optional.of(despesa));
+        when(parcelaRepositorio.findByDespesaId(despesaId)).thenReturn(List.of(parcelaPagador, parcelaOutro));
+
+        EstornoDetalhe detalhe = servico.estornar(grupoId, despesaId, registradorId);
+
+        assertEquals(StatusDespesa.ESTORNADA, despesa.getStatus());
+        assertNotNull(despesa.getEstornadaEm());
+        verify(despesaRepositorio).save(despesa);
+        assertEquals(despesaId, detalhe.id());
+        assertEquals(StatusDespesa.ESTORNADA, detalhe.status());
+    }
+
+
 }
