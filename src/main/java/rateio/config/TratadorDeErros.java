@@ -16,6 +16,7 @@ import rateio.grupo.MembroRepetidoException;
 import rateio.membro.MembroNaoEncontradoException;
 import rateio.despesa.DespesaJaEstornadaException;
 import rateio.despesa.DespesaNaoEncontradaException;
+import rateio.grupo.GrupoComDespesasException;
 
 
 @RestControllerAdvice
@@ -45,7 +46,7 @@ public class TratadorDeErros {
         return new ErroResponse(e.getMessage());
     }
 
-    @ExceptionHandler({MembroRepetidoException.class, GrupoComPoucosMembrosException.class})
+    @ExceptionHandler({MembroRepetidoException.class, GrupoComPoucosMembrosException.class, GrupoComDespesasException.class})
     @ResponseStatus(HttpStatus.CONFLICT)
     public ErroResponse conflitoDeGrupo(RuntimeException e) {
         return new ErroResponse(e.getMessage());
