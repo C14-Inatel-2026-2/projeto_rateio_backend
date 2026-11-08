@@ -11,4 +11,6 @@ public interface DespesaRepository extends JpaRepository<DespesaEntidade, UUID> 
     List<DespesaEntidade> findByGrupoId(UUID grupoId);
 
     Optional<DespesaEntidade> findByIdAndGrupoId(UUID id, UUID grupoId);
+
+    boolean existsByGrupoId(UUID grupoId);
 }
