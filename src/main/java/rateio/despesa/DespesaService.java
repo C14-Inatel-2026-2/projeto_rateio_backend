@@ -197,4 +197,39 @@ public class DespesaService {
 
     }
 
+    @Transactional
+    public EstornoDetalhe estornar(UUID grupoId, UUID despesaId, UUID membroId) {
+        if (membroId == null || grupoId == null || despesaId == null) {
+            throw new IllegalArgumentException("grupoId, membroId e despesaId sao obrigatorios");
+        }
+
+        grupoRepositorio.findById(grupoId).orElseThrow(DespesaNaoEncontradaException::new);
+
+        if (!participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)) {
+            throw new DespesaNaoEncontradaException();
+        }
+
+        DespesaEntidade despesa = despesaRepositorio.findByIdAndGrupoId(despesaId, grupoId)
+                .orElseThrow(DespesaNaoEncontradaException::new);
+
+        if (despesa.getStatus() == StatusDespesa.ESTORNADA) {
+            throw new DespesaJaEstornadaException();
+        }
+
+        List<Despesa.Parcela> parcelasDominio = new ArrayList<>();
+        for (ParcelaEntidade parcela : parcelaRepositorio.findByDespesaId(despesaId)) {
+            parcelasDominio.add(new Despesa.Parcela(parcela.getMembro().getId(), parcela.getValor()));
+        }
+
+        Despesa dominio = new Despesa(grupoId, despesa.getPagador().getId(), despesa.getDescricao(),
+                despesa.getValorTotal(), despesa.getEstrategia(), parcelasDominio);
+        dominio.estornar();
+
+        despesa.setStatus(StatusDespesa.ESTORNADA);
+        despesa.setEstornadaEm(dominio.estornadaEm());
+        despesaRepositorio.save(despesa);
+
+        return new EstornoDetalhe(despesa.getId(), despesa.getStatus());
+    }
+
 }
