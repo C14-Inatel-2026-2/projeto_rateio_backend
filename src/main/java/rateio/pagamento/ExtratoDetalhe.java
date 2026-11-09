@@ -1,4 +1,14 @@
 package rateio.pagamento;
 
-public class ExtratoDetalhe {
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.UUID;
+
+public record ExtratoDetalhe (TipoMovimentacao tipo,
+                              UUID id,
+                              UUID autorId,
+                              String autorNome,
+                              BigDecimal valor,
+                              StatusPagamento status,
+                              Instant data) {
 }
