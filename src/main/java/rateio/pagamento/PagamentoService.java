@@ -2,7 +2,7 @@ package rateio.pagamento;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import rateio.despesa.DespesaRepository;
+import rateio.despesa.*;
 import rateio.grupo.GrupoMembroRepository;
 import rateio.grupo.GrupoRepository;
 import rateio.membro.MembroNaoEncontradoException;
@@ -92,6 +92,39 @@ public class PagamentoService {
                 pagamento.getValor(),
                 pagamento.getStatus(),
                 pagamento.getCriadoEm());
+    }
+
+    @Transactional
+    public EstornoPagamentoDetalhe estornar(UUID grupoId, UUID pagamentoId, UUID membroId) {
+        if (membroId == null || grupoId == null || pagamentoId == null) {
+            throw new IllegalArgumentException("grupoId, membroId e pagamentoId sao obrigatorios");
+        }
+
+        grupoRepositorio.findById(grupoId).orElseThrow(PagamentoNaoEncontradoException::new);
+
+        if (!participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)) {
+            throw new PagamentoNaoEncontradoException();
+        }
+
+        PagamentoEntidade pagamento = pagamentoRepositorio.findByIdAndGrupoId(pagamentoId, grupoId)
+                .orElseThrow(PagamentoNaoEncontradoException::new);
+
+        if (pagamento.getStatus() == StatusPagamento.ESTORNADO) {
+            throw new PagamentoJaEstornadoException();
+        }
+
+        Pagamento pagamentoDominio = new Pagamento(
+                grupoId,
+                pagamento.getDe().getId(),
+                pagamento.getPara().getId(),
+                pagamento.getValor());
+
+        pagamentoDominio.estornar();
+        pagamento.setStatus(StatusPagamento.ESTORNADO);
+        pagamento.setEstornadoEm(pagamentoDominio.estornadoEm());
+        pagamentoRepositorio.save(pagamento);
+
+        return new EstornoPagamentoDetalhe(pagamento.getId(), pagamento.getStatus());
     }
 
 }
