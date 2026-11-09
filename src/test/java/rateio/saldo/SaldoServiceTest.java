@@ -16,6 +16,9 @@ import rateio.grupo.GrupoMembroRepository;
 import rateio.grupo.GrupoNaoEncontradoException;
 import rateio.grupo.GrupoRepository;
 import rateio.membro.Membro;
+import rateio.pagamento.PagamentoEntidade;
+import rateio.pagamento.PagamentoRepository;
+import rateio.pagamento.StatusPagamento;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,6 +43,9 @@ public class SaldoServiceTest {
 
     @Mock
     private ParcelaRepository parcelaRepositorio;
+
+    @Mock
+    private PagamentoRepository pagamentoRepositorio;
 
     @InjectMocks
     private SaldoService servico;
@@ -84,6 +90,16 @@ public class SaldoServiceTest {
             participacoes.add(participacao(membro));
         }
         when(participacaoRepositorio.findByGrupoId(grupoId)).thenReturn(participacoes);
+    }
+
+    private PagamentoEntidade pagamento(Membro de, Membro para, String valor) {
+        PagamentoEntidade pagamento = new PagamentoEntidade();
+        pagamento.setId(UUID.randomUUID());
+        pagamento.setDe(de);
+        pagamento.setPara(para);
+        pagamento.setValor(new BigDecimal(valor));
+        pagamento.setStatus(StatusPagamento.ATIVO);
+        return pagamento;
     }
 
     @Test
@@ -232,5 +248,45 @@ public class SaldoServiceTest {
 
         assertEquals(idMenor, saldos.get(0).membroId());
         assertEquals(idMaior, saldos.get(1).membroId());
+    }
+
+    @Test
+    void pagamentoAtivoReduzOsSaldos() {
+        UUID grupoId = UUID.randomUUID();
+        Membro ana = membro(UUID.randomUUID(), "Ana");
+        Membro bia = membro(UUID.randomUUID(), "Bia");
+        DespesaEntidade jantar = despesa(ana, "100.00");
+        grupoComMembros(grupoId, ana, ana, bia);
+        when(parcelaRepositorio.findByDespesaGrupoIdAndDespesaStatus(grupoId, StatusDespesa.ATIVA))
+                .thenReturn(List.of(
+                        parcela(jantar, ana, "50.00"),
+                        parcela(jantar, bia, "50.00")));
+        when(pagamentoRepositorio.findByGrupoIdAndStatus(grupoId, StatusPagamento.ATIVO))
+                .thenReturn(List.of(pagamento(bia, ana, "20.00")));
+
+        List<SaldoDetalhe> saldos = servico.consultar(grupoId, ana.getId());
+
+        assertEquals(new BigDecimal("30.00"), saldos.get(0).saldo());
+        assertEquals(new BigDecimal("-30.00"), saldos.get(1).saldo());
+    }
+
+    @Test
+    void pagamentoQuitaADividaEZeraOsSaldos() {
+        UUID grupoId = UUID.randomUUID();
+        Membro ana = membro(UUID.randomUUID(), "Ana");
+        Membro bia = membro(UUID.randomUUID(), "Bia");
+        DespesaEntidade jantar = despesa(ana, "100.00");
+        grupoComMembros(grupoId, ana, ana, bia);
+        when(parcelaRepositorio.findByDespesaGrupoIdAndDespesaStatus(grupoId, StatusDespesa.ATIVA))
+                .thenReturn(List.of(
+                        parcela(jantar, ana, "50.00"),
+                        parcela(jantar, bia, "50.00")));
+        when(pagamentoRepositorio.findByGrupoIdAndStatus(grupoId, StatusPagamento.ATIVO))
+                .thenReturn(List.of(pagamento(bia, ana, "50.00")));
+
+        List<SaldoDetalhe> saldos = servico.consultar(grupoId, ana.getId());
+
+        assertEquals(new BigDecimal("0.00"), saldos.get(0).saldo());
+        assertEquals(new BigDecimal("0.00"), saldos.get(1).saldo());
     }
 }
