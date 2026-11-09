@@ -62,6 +62,7 @@ public class PagamentoServiceTest {
     private final UUID grupoId = UUID.randomUUID();
     private final UUID registradorId = UUID.randomUUID();
     private final UUID paraId = UUID.randomUUID();
+    private final UUID pagamentoId = UUID.randomUUID();
 
     private Membro membro(UUID id) {
         Membro membro = new Membro();
@@ -239,4 +240,94 @@ public class PagamentoServiceTest {
         assertEquals(new BigDecimal("10.00"), detalhe.valor());
         assertEquals(StatusPagamento.ATIVO, detalhe.status());
     }
+
+    @Test
+    void rejeitaMembroIdNuloAoEstornar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.estornar(grupoId, pagamentoId, null));
+    }
+
+    @Test
+    void rejeitaGrupoIdNuloAoEstornar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.estornar(null, pagamentoId, registradorId));
+    }
+
+    @Test
+    void rejeitaPagamentoIdNuloAoEstornar() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.estornar(grupoId, null, registradorId));
+    }
+
+    @Test
+    void rejeitaGrupoNaoEncontradoAoEstornar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(PagamentoNaoEncontradoException.class,
+                () -> servico.estornar(grupoId, pagamentoId, registradorId));
+
+        verify(pagamentoRepositorio, never()).findByIdAndGrupoId(any(), any());
+        verify(participacaoRepositorio, never()).existsByGrupoIdAndMembroId(any(), any());
+    }
+
+    @Test
+    void rejeitaQuemPedeForaDoGrupoAoEstornar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(false);
+
+        assertThrows(PagamentoNaoEncontradoException.class,
+                () -> servico.estornar(grupoId, pagamentoId, registradorId));
+
+        verify(pagamentoRepositorio, never()).findByIdAndGrupoId(any(), any());
+    }
+
+    @Test
+    void rejeitaPagamentoNaoEncontradoAoEstornar() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByIdAndGrupoId(pagamentoId, grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(PagamentoNaoEncontradoException.class,
+                () -> servico.estornar(grupoId, pagamentoId, registradorId));
+
+        verify(pagamentoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void rejeitaPagamentoJaEstornado() {
+        PagamentoEntidade pagamento = new PagamentoEntidade();
+        pagamento.setId(pagamentoId);
+        pagamento.setStatus(StatusPagamento.ESTORNADO);
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByIdAndGrupoId(pagamentoId, grupoId)).thenReturn(Optional.of(pagamento));
+
+        assertThrows(PagamentoJaEstornadoException.class,
+                () -> servico.estornar(grupoId, pagamentoId, registradorId));
+
+        verify(pagamentoRepositorio, never()).save(any());
+    }
+
+    @Test
+    void estornaPagamento() {
+        PagamentoEntidade pagamento = new PagamentoEntidade();
+        pagamento.setId(pagamentoId);
+        pagamento.setDe(membro(registradorId));
+        pagamento.setPara(membro(paraId));
+        pagamento.setValor(new BigDecimal("20.00"));
+        pagamento.setStatus(StatusPagamento.ATIVO);
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByIdAndGrupoId(pagamentoId, grupoId)).thenReturn(Optional.of(pagamento));
+
+        EstornoPagamentoDetalhe detalhe = servico.estornar(grupoId, pagamentoId, registradorId);
+
+        assertEquals(StatusPagamento.ESTORNADO, pagamento.getStatus());
+        assertNotNull(pagamento.getEstornadoEm());
+        verify(pagamentoRepositorio).save(pagamento);
+        assertEquals(pagamentoId, detalhe.id());
+        assertEquals(StatusPagamento.ESTORNADO, detalhe.status());
+    }
+
+
 }
