@@ -26,15 +26,15 @@ public class PagamentoService {
     private final GrupoMembroRepository participacaoRepositorio;
     private final MembroRepository membroRepositorio;
     private final QuitacaoService quitacaoService;
-    private final SaldoService saldoService;
     private final PagamentoRepository pagamentoRepositorio;
+    private final DespesaRepository despesaRepositorio;
 
-    public PagamentoService(GrupoRepository grupoRepositorio, GrupoMembroRepository participacaoRepositorio, MembroRepository membroRepositorio, DespesaRepository despesaRepositorio, QuitacaoService quitacaoService, SaldoService saldoService, PagamentoRepository pagamentoRepositorio) {
+    public PagamentoService(GrupoRepository grupoRepositorio, GrupoMembroRepository participacaoRepositorio, MembroRepository membroRepositorio, DespesaRepository despesaRepositorio, QuitacaoService quitacaoService, SaldoService saldoService, PagamentoRepository pagamentoRepositorio, DespesaRepository despesaRepositorio1) {
         this.grupoRepositorio = grupoRepositorio;
         this.participacaoRepositorio = participacaoRepositorio;
         this.membroRepositorio = membroRepositorio;
         this.quitacaoService = quitacaoService;
-        this.saldoService = saldoService;
+        this.despesaRepositorio = despesaRepositorio1;
         this.pagamentoRepositorio = pagamentoRepositorio;
     }
 
@@ -125,6 +125,50 @@ public class PagamentoService {
         pagamentoRepositorio.save(pagamento);
 
         return new EstornoPagamentoDetalhe(pagamento.getId(), pagamento.getStatus());
+    }
+
+    @Transactional(readOnly = true)
+    public List<ExtratoDetalhe> extrato(UUID grupoId, UUID membroId) {
+        if (membroId == null || grupoId == null) {
+            throw new IllegalArgumentException("grupoId e membroId sao obrigatorios");
+        }
+
+        grupoRepositorio.findById(grupoId).orElseThrow(GrupoNaoEncontradoException::new);
+
+        if (!participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, membroId)) {
+            throw new GrupoNaoEncontradoException();
+        }
+
+        List<PagamentoEntidade> pagamentos = pagamentoRepositorio.findByGrupoId(grupoId);
+        List<DespesaEntidade> despesas = despesaRepositorio.findByGrupoId(grupoId);
+
+        List<ExtratoDetalhe> extrato = new ArrayList<>();
+
+        for (PagamentoEntidade pagamento : pagamentos) {
+            extrato.add(new ExtratoDetalhe(
+                    TipoMovimentacao.PAGAMENTO,
+                    pagamento.getId(),
+                    pagamento.getDe().getId(),
+                    pagamento.getDe().getNome(),
+                    pagamento.getValor(),
+                    pagamento.getStatus().name(),
+                    pagamento.getCriadoEm()));
+        }
+
+        for (DespesaEntidade despesa : despesas) {
+            extrato.add(new ExtratoDetalhe(
+                    TipoMovimentacao.DESPESA,
+                    despesa.getId(),
+                    despesa.getPagador().getId(),
+                    despesa.getPagador().getNome(),
+                    despesa.getValorTotal(),
+                    despesa.getStatus().name(),
+                    despesa.getCriadaEm()));
+        }
+
+        extrato.sort(Comparator.comparing(ExtratoDetalhe::data).thenComparing(ExtratoDetalhe::id));
+
+        return extrato;
     }
 
 }

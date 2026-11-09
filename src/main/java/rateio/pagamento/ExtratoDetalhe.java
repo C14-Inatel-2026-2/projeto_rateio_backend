@@ -9,6 +9,6 @@ public record ExtratoDetalhe (TipoMovimentacao tipo,
                               UUID autorId,
                               String autorNome,
                               BigDecimal valor,
-                              StatusPagamento status,
+                              String status,
                               Instant data) {
 }
