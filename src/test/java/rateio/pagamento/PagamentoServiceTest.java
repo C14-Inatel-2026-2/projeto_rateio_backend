@@ -7,6 +7,9 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import rateio.despesa.DespesaEntidade;
+import rateio.despesa.DespesaRepository;
+import rateio.despesa.StatusDespesa;
 import rateio.grupo.GrupoEntidade;
 import rateio.grupo.GrupoMembroRepository;
 import rateio.grupo.GrupoNaoEncontradoException;
@@ -19,14 +22,12 @@ import rateio.quitacao.QuitacaoService;
 import rateio.saldo.SaldoService;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -48,10 +49,10 @@ public class PagamentoServiceTest {
     private QuitacaoService quitacaoService;
 
     @Mock
-    private SaldoService saldoService;
+    private PagamentoRepository pagamentoRepositorio;
 
     @Mock
-    private PagamentoRepository pagamentoRepositorio;
+    private DespesaRepository despesaRepositorio;
 
     @InjectMocks
     private PagamentoService servico;
@@ -68,6 +69,33 @@ public class PagamentoServiceTest {
         Membro membro = new Membro();
         membro.setId(id);
         return membro;
+    }
+
+    private Membro membroComNome(UUID id, String nome) {
+        Membro membro = new Membro();
+        membro.setId(id);
+        membro.setNome(nome);
+        return membro;
+    }
+
+    private DespesaEntidade despesaEntidade(UUID id, Membro pagador, String valor, StatusDespesa status, Instant data) {
+        DespesaEntidade despesa = new DespesaEntidade();
+        despesa.setId(id);
+        despesa.setPagador(pagador);
+        despesa.setValorTotal(new BigDecimal(valor));
+        despesa.setStatus(status);
+        despesa.setCriadaEm(data);
+        return despesa;
+    }
+
+    private PagamentoEntidade pagamentoEntidade(UUID id, Membro de, String valor, StatusPagamento status, Instant data) {
+        PagamentoEntidade pagamento = new PagamentoEntidade();
+        pagamento.setId(id);
+        pagamento.setDe(de);
+        pagamento.setValor(new BigDecimal(valor));
+        pagamento.setStatus(status);
+        pagamento.setCriadoEm(data);
+        return pagamento;
     }
 
     private QuitacaoDetalhe transferencia(UUID deId, UUID paraId, String valor) {
@@ -327,6 +355,124 @@ public class PagamentoServiceTest {
         verify(pagamentoRepositorio).save(pagamento);
         assertEquals(pagamentoId, detalhe.id());
         assertEquals(StatusPagamento.ESTORNADO, detalhe.status());
+    }
+
+    @Test
+    void rejeitaGrupoIdNuloAoConsultarExtrato() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.extrato(null, registradorId));
+    }
+
+    @Test
+    void rejeitaMembroIdNuloAoConsultarExtrato() {
+        assertThrows(IllegalArgumentException.class,
+                () -> servico.extrato(grupoId, null));
+    }
+
+    @Test
+    void rejeitaGrupoNaoEncontradoAoConsultarExtrato() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.empty());
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.extrato(grupoId, registradorId));
+
+        verify(pagamentoRepositorio, never()).findByGrupoId(any());
+        verify(despesaRepositorio, never()).findByGrupoId(any());
+    }
+
+    @Test
+    void rejeitaQuemPedeForaDoGrupoAoConsultarExtrato() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(false);
+
+        assertThrows(GrupoNaoEncontradoException.class,
+                () -> servico.extrato(grupoId, registradorId));
+
+        verify(pagamentoRepositorio, never()).findByGrupoId(any());
+        verify(despesaRepositorio, never()).findByGrupoId(any());
+    }
+
+    @Test
+    void devolveExtratoVazioQuandoNaoHaMovimentacoes() {
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of());
+        when(despesaRepositorio.findByGrupoId(grupoId)).thenReturn(List.of());
+
+        List<ExtratoDetalhe> extrato = servico.extrato(grupoId, registradorId);
+
+        assertTrue(extrato.isEmpty());
+    }
+
+    @Test
+    void ordenaDespesasEPagamentosEmOrdemCronologica() {
+        Membro ana = membroComNome(UUID.randomUUID(), "Ana");
+        Membro bia = membroComNome(UUID.randomUUID(), "Bia");
+        DespesaEntidade jantar = despesaEntidade(UUID.randomUUID(), ana, "100.00",
+                StatusDespesa.ATIVA, Instant.parse("2026-11-01T10:00:00Z"));
+        PagamentoEntidade pagamento = pagamentoEntidade(UUID.randomUUID(), bia, "20.00",
+                StatusPagamento.ATIVO, Instant.parse("2026-11-02T10:00:00Z"));
+        DespesaEntidade mercado = despesaEntidade(UUID.randomUUID(), bia, "60.00",
+                StatusDespesa.ESTORNADA, Instant.parse("2026-11-03T10:00:00Z"));
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(pagamento));
+        when(despesaRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(mercado, jantar));
+
+        List<ExtratoDetalhe> extrato = servico.extrato(grupoId, registradorId);
+
+        assertEquals(3, extrato.size());
+        assertEquals(jantar.getId(), extrato.get(0).id());
+        assertEquals(TipoMovimentacao.DESPESA, extrato.get(0).tipo());
+        assertEquals(pagamento.getId(), extrato.get(1).id());
+        assertEquals(TipoMovimentacao.PAGAMENTO, extrato.get(1).tipo());
+        assertEquals(mercado.getId(), extrato.get(2).id());
+        assertEquals(TipoMovimentacao.DESPESA, extrato.get(2).tipo());
+    }
+
+    @Test
+    void extratoTrazAutorValorEStatusDeCadaItem() {
+        Membro ana = membroComNome(UUID.randomUUID(), "Ana");
+        Membro bia = membroComNome(UUID.randomUUID(), "Bia");
+        DespesaEntidade jantar = despesaEntidade(UUID.randomUUID(), ana, "100.00",
+                StatusDespesa.ATIVA, Instant.parse("2026-11-01T10:00:00Z"));
+        PagamentoEntidade pagamento = pagamentoEntidade(UUID.randomUUID(), bia, "20.00",
+                StatusPagamento.ESTORNADO, Instant.parse("2026-11-02T10:00:00Z"));
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(pagamento));
+        when(despesaRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(jantar));
+
+        List<ExtratoDetalhe> extrato = servico.extrato(grupoId, registradorId);
+
+        assertEquals(ana.getId(), extrato.get(0).autorId());
+        assertEquals("Ana", extrato.get(0).autorNome());
+        assertEquals(new BigDecimal("100.00"), extrato.get(0).valor());
+        assertEquals("ATIVA", extrato.get(0).status());
+        assertEquals(Instant.parse("2026-11-01T10:00:00Z"), extrato.get(0).data());
+        assertEquals(bia.getId(), extrato.get(1).autorId());
+        assertEquals("Bia", extrato.get(1).autorNome());
+        assertEquals(new BigDecimal("20.00"), extrato.get(1).valor());
+        assertEquals("ESTORNADO", extrato.get(1).status());
+    }
+
+    @Test
+    void datasIguaisSaoOrdenadasPeloId() {
+        Instant mesmaData = Instant.parse("2026-11-01T10:00:00Z");
+        UUID idMenor = UUID.fromString("00000000-0000-0000-0000-000000000001");
+        UUID idMaior = UUID.fromString("00000000-0000-0000-0000-000000000002");
+        Membro ana = membroComNome(UUID.randomUUID(), "Ana");
+        DespesaEntidade despesa = despesaEntidade(idMaior, ana, "10.00", StatusDespesa.ATIVA, mesmaData);
+        PagamentoEntidade pagamento = pagamentoEntidade(idMenor, ana, "5.00", StatusPagamento.ATIVO, mesmaData);
+        when(grupoRepositorio.findById(grupoId)).thenReturn(Optional.of(new GrupoEntidade()));
+        when(participacaoRepositorio.existsByGrupoIdAndMembroId(grupoId, registradorId)).thenReturn(true);
+        when(pagamentoRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(pagamento));
+        when(despesaRepositorio.findByGrupoId(grupoId)).thenReturn(List.of(despesa));
+
+        List<ExtratoDetalhe> extrato = servico.extrato(grupoId, registradorId);
+
+        assertEquals(idMenor, extrato.get(0).id());
+        assertEquals(idMaior, extrato.get(1).id());
     }
 
 
