@@ -3,10 +3,11 @@ package rateio.quitacao;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.atLeastOnce;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -14,8 +15,31 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import rateio.quitacao.Quitacao.Transferencia;
 import rateio.saldo.Saldo;
+
 public class QuitacaoTest {
+
+    @Test
+    void saldosVaziosGeramQuitacaoVazia() {
+        Quitacao quitacao = Quitacao.apartirDe(List.of());
+
+        assertTrue(quitacao.estaVazia());
+        assertEquals(0, quitacao.quantidadeDeTransferencias());
+        assertEquals(0, BigDecimal.ZERO.compareTo(quitacao.totalTransferido()));
+        assertTrue(quitacao.transferencias().isEmpty());
+    }
+
+    @Test
+    void listaDeTransferenciasEImutavelEMembroDesconhecidoNaoEnvolve() {
+        Quitacao quitacao = Quitacao.apartirDe(List.of());
+
+        List<Transferencia> transferencias = quitacao.transferencias();
+        Transferencia qualquer = new Transferencia(UUID.randomUUID(), UUID.randomUUID(), BigDecimal.TEN);
+
+        assertThrows(UnsupportedOperationException.class, () -> transferencias.add(qualquer));
+        assertFalse(quitacao.envolve(UUID.randomUUID()));
+    }
 
     @Test
     void tresSaldos() {
@@ -33,6 +57,7 @@ public class QuitacaoTest {
 
         assertEquals(2, quitacao.quantidadeDeTransferencias());
         assertEquals(0, quitacao.totalTransferido().compareTo(new BigDecimal("60")));
+        assertTrue(quitacao.transferencias().stream().allMatch(t -> t.paraId().equals(a)));
     }
 
     @Test
@@ -68,9 +93,14 @@ public class QuitacaoTest {
 
         Quitacao quitacao = Quitacao.apartirDe(List.of(credor, devedor));
 
+        Transferencia t = quitacao.transferencias().get(0);
+
         assertEquals(1, quitacao.quantidadeDeTransferencias());
-        assertEquals(devedorId, quitacao.transferencias().get(0).deId());
-        assertEquals(credorId, quitacao.transferencias().get(0).paraId());
+        assertEquals(devedorId, t.deId());
+        assertEquals(credorId, t.paraId());
+        assertEquals(0, new BigDecimal("100").compareTo(t.valor()));
+        assertTrue(quitacao.envolve(devedorId));
+        assertTrue(quitacao.envolve(credorId));
 
         verify(credor, atLeastOnce()).valor();
         verify(devedor, atLeastOnce()).valor();
