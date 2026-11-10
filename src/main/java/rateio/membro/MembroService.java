@@ -17,11 +17,7 @@ public class MembroService {
 
     @Transactional
     public Membro cadastrar(String nome, String email, String senha) {
-        if (nome == null || nome.isBlank()
-                || email == null || email.isBlank()
-                || senha == null || senha.isBlank()) {
-            throw new IllegalArgumentException("Nome, email e senha sao obrigatorios");
-        }
+        validarCamposObrigatorios(nome, email, senha);
 
         String emailNormalizado = email.trim().toLowerCase();
 
@@ -52,5 +48,13 @@ public class MembroService {
         }
 
         return membro;
+    }
+
+    private void validarCamposObrigatorios(String nome, String email, String senha) {
+        if (nome == null || nome.isBlank()
+                || email == null || email.isBlank()
+                || senha == null || senha.isBlank()) {
+            throw new IllegalArgumentException("Nome, email e senha sao obrigatorios");
+        }
     }
 }

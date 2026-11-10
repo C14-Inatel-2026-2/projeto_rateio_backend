@@ -15,7 +15,6 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
-
 @ExtendWith(MockitoExtension.class)
 class MembroServiceTest {
 
@@ -47,14 +46,7 @@ class MembroServiceTest {
     }
 
     @Test
-    void cadastraMembroEmailRepetido(){
-        when(repositorio.existsByEmail("ana@x.com")).thenReturn(true);
-        assertThrows(EmailJaCadastradoException.class,
-                () ->  servico.cadastrar("  Ana ", "  Ana@X.com ", "123"));
-    }
-
-    @Test
-    void rejeitaEmailRepetido() {
+    void rejeitaEmailRepetidoENaoSalva() {
         when(repositorio.existsByEmail("ana@x.com")).thenReturn(true);
 
         assertThrows(EmailJaCadastradoException.class,
@@ -98,9 +90,7 @@ class MembroServiceTest {
 
     @Test
     void autenticarComSenhaInvalida(){
-        Membro membro = new Membro();
-        membro.setEmail("ana@x.com");
-        membro.setHashSenha("hash");
+        Membro membro = criarMembroPadrao();
         when(repositorio.findByEmail("ana@x.com")).thenReturn(Optional.of(membro));
         when(encoder.matches("errada", "hash")).thenReturn(false);
 
@@ -110,9 +100,7 @@ class MembroServiceTest {
 
     @Test
     void autenticarComCredenciaisCorretas(){
-        Membro membro = new Membro();
-        membro.setEmail("ana@x.com");
-        membro.setHashSenha("hash");
+        Membro membro = criarMembroPadrao();
         when(repositorio.findByEmail("ana@x.com")).thenReturn(Optional.of(membro));
         when(encoder.matches("123", "hash")).thenReturn(true);
 
@@ -121,4 +109,10 @@ class MembroServiceTest {
         assertEquals(membro, autenticado);
     }
 
+    private Membro criarMembroPadrao() {
+        Membro membro = new Membro();
+        membro.setEmail("ana@x.com");
+        membro.setHashSenha("hash");
+        return membro;
+    }
 }
