@@ -36,7 +36,8 @@ public class SaldoService {
 
     public SaldoService(GrupoRepository grupoRepositorio,
                         GrupoMembroRepository participacaoRepositorio,
-                        ParcelaRepository parcelaRepositorio, PagamentoRepository pagamentoRepositorio) {
+                        ParcelaRepository parcelaRepositorio,
+                        PagamentoRepository pagamentoRepositorio) {
         this.grupoRepositorio = grupoRepositorio;
         this.participacaoRepositorio = participacaoRepositorio;
         this.parcelaRepositorio = parcelaRepositorio;
@@ -45,6 +46,35 @@ public class SaldoService {
 
     @Transactional(readOnly = true)
     public List<SaldoDetalhe> consultar(UUID grupoId, UUID membroId) {
+        validarParametrosEPreRequisitos(grupoId, membroId);
+
+        List<GrupoMembroEntidade> participacoes = buscarParticipacoesOrdenadas(grupoId);
+
+        Set<UUID> idsDosMembros = new LinkedHashSet<>();
+        Map<UUID, String> nomes = new HashMap<>();
+        for (GrupoMembroEntidade participacao : participacoes) {
+            Membro membro = participacao.getMembro();
+            idsDosMembros.add(membro.getId());
+            nomes.put(membro.getId(), membro.getNome());
+        }
+
+        List<Despesa> despesasDominio = carregarDespesasDeDominio(grupoId);
+        List<Pagamento> pagamentosDominio = carregarPagamentosDeDominio(grupoId);
+
+        List<Saldo> saldosConsolidados = Saldo.consolidar(idsDosMembros, despesasDominio, pagamentosDominio);
+
+        List<SaldoDetalhe> resposta = new ArrayList<>();
+        for (Saldo saldo : saldosConsolidados) {
+            resposta.add(new SaldoDetalhe(
+                    saldo.membroId(),
+                    nomes.get(saldo.membroId()),
+                    saldo.valor().setScale(2)));
+        }
+
+        return resposta;
+    }
+
+    private void validarParametrosEPreRequisitos(UUID grupoId, UUID membroId) {
         if (grupoId == null || membroId == null) {
             throw new IllegalArgumentException("grupoId e membroId sao obrigatorios");
         }
@@ -55,38 +85,26 @@ public class SaldoService {
         if (!membroPertence) {
             throw new GrupoNaoEncontradoException();
         }
+    }
 
+    private List<GrupoMembroEntidade> buscarParticipacoesOrdenadas(UUID grupoId) {
         List<GrupoMembroEntidade> participacoes = new ArrayList<>(participacaoRepositorio.findByGrupoId(grupoId));
         participacoes.sort(Comparator
                 .comparing((GrupoMembroEntidade p) -> p.getMembro().getNome())
                 .thenComparing(p -> p.getMembro().getId()));
+        return participacoes;
+    }
 
-        Set<UUID> idsDosMembros = new LinkedHashSet<>();
-        Map<UUID, String> nomes = new HashMap<>();
-        for (GrupoMembroEntidade participacao : participacoes) {
-            Membro membro = participacao.getMembro();
-            idsDosMembros.add(membro.getId());
-            nomes.put(membro.getId(), membro.getNome());
-        }
-
+    private List<Despesa> carregarDespesasDeDominio(UUID grupoId) {
         List<ParcelaEntidade> parcelasAtivas = parcelaRepositorio
                 .findByDespesaGrupoIdAndDespesaStatus(grupoId, StatusDespesa.ATIVA);
 
-        List<DespesaEntidade> despesas = new ArrayList<>();
-        for (ParcelaEntidade parcela : parcelasAtivas) {
-            if (!despesas.contains(parcela.getDespesa())) {
-                despesas.add(parcela.getDespesa());
-            }
-        }
+        List<DespesaEntidade> despesasUnicas = extrairDespesasUnicas(parcelasAtivas);
 
         List<Despesa> despesasDominio = new ArrayList<>();
-        for (DespesaEntidade despesa : despesas) {
-            List<Despesa.Parcela> parcelasDaDespesa = new ArrayList<>();
-            for (ParcelaEntidade parcela : parcelasAtivas) {
-                if (parcela.getDespesa().equals(despesa)) {
-                    parcelasDaDespesa.add(new Despesa.Parcela(parcela.getMembro().getId(), parcela.getValor()));
-                }
-            }
+        for (DespesaEntidade despesa : despesasUnicas) {
+            List<Despesa.Parcela> parcelasDaDespesa = extrairParcelasDaDespesa(despesa, parcelasAtivas);
+
             despesasDominio.add(new Despesa(
                     grupoId,
                     despesa.getPagador().getId(),
@@ -95,7 +113,30 @@ public class SaldoService {
                     despesa.getEstrategia(),
                     parcelasDaDespesa));
         }
+        return despesasDominio;
+    }
 
+    private List<DespesaEntidade> extrairDespesasUnicas(List<ParcelaEntidade> parcelasAtivas) {
+        List<DespesaEntidade> despesas = new ArrayList<>();
+        for (ParcelaEntidade parcela : parcelasAtivas) {
+            if (!despesas.contains(parcela.getDespesa())) {
+                despesas.add(parcela.getDespesa());
+            }
+        }
+        return despesas;
+    }
+
+    private List<Despesa.Parcela> extrairParcelasDaDespesa(DespesaEntidade despesa, List<ParcelaEntidade> parcelasAtivas) {
+        List<Despesa.Parcela> parcelasDaDespesa = new ArrayList<>();
+        for (ParcelaEntidade parcela : parcelasAtivas) {
+            if (parcela.getDespesa().equals(despesa)) {
+                parcelasDaDespesa.add(new Despesa.Parcela(parcela.getMembro().getId(), parcela.getValor()));
+            }
+        }
+        return parcelasDaDespesa;
+    }
+
+    private List<Pagamento> carregarPagamentosDeDominio(UUID grupoId) {
         List<Pagamento> pagamentosDominio = new ArrayList<>();
         for (PagamentoEntidade pagamento : pagamentoRepositorio.findByGrupoIdAndStatus(grupoId, StatusPagamento.ATIVO)) {
             pagamentosDominio.add(new Pagamento(
@@ -104,14 +145,6 @@ public class SaldoService {
                     pagamento.getPara().getId(),
                     pagamento.getValor()));
         }
-
-        List<SaldoDetalhe> resposta = new ArrayList<>();
-        for (Saldo saldo : Saldo.consolidar(idsDosMembros, despesasDominio, pagamentosDominio)) {
-            resposta.add(new SaldoDetalhe(
-                    saldo.membroId(),
-                    nomes.get(saldo.membroId()),
-                    saldo.valor().setScale(2)));
-        }
-        return resposta;
+        return pagamentosDominio;
     }
 }
