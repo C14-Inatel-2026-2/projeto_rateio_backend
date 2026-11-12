@@ -17,6 +17,13 @@ import rateio.membro.MembroNaoEncontradoException;
 import rateio.despesa.exception.DespesaJaEstornadaException;
 import rateio.despesa.exception.DespesaNaoEncontradaException;
 import rateio.grupo.exception.GrupoComDespesasException;
+import rateio.despesa.DespesaJaEstornadaException;
+import rateio.despesa.DespesaNaoEncontradaException;
+import rateio.grupo.GrupoComDespesasException;
+import rateio.pagamento.PagamentoJaEstornadoException;
+import rateio.pagamento.PagamentoNaoEncontradoException;
+import rateio.pagamento.ValorInvalidoException;
+import rateio.pagamento.ValorMaiorDividaException;
 
 
 @RestControllerAdvice
@@ -80,5 +87,23 @@ public class TratadorDeErros {
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ErroResponse corpoInvalido(HttpMessageNotReadableException e) {
         return new ErroResponse("Corpo da requisicao invalido");
+    }
+
+    @ExceptionHandler({ValorInvalidoException.class, ValorMaiorDividaException.class})
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ErroResponse valorDePagamentoInvalido(RuntimeException e) {
+        return new ErroResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(PagamentoNaoEncontradoException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ErroResponse pagamentoNaoEncontrado(PagamentoNaoEncontradoException e) {
+        return new ErroResponse(e.getMessage());
+    }
+
+    @ExceptionHandler(PagamentoJaEstornadoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ErroResponse pagamentoJaEstornado(PagamentoJaEstornadoException e) {
+        return new ErroResponse(e.getMessage());
     }
 }

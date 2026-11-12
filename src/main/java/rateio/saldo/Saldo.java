@@ -11,11 +11,11 @@ import rateio.despesa.domain.Despesa;
 import rateio.pagamento.Pagamento;
 
 public record Saldo(UUID membroId, BigDecimal valor) {
+
     public Saldo {
         if (membroId == null || valor == null) {
             throw new IllegalArgumentException("O ID do membro e o valor são obrigatorios.");
         }
-
     }
 
     public boolean ehCredor() {
@@ -35,10 +35,9 @@ public record Saldo(UUID membroId, BigDecimal valor) {
     }
 
     /**
-     * H3: consolida o razao do grupo em um saldo por membro.
-     *
-     * Membros sem movimentacao aparecem com saldo zero, nao sao omitidos.
-     * Despesas e pagamentos estornados sao ignorados.
+     * Consolida o razão do grupo em um saldo por membro.
+     * Membros sem movimentação aparecem com saldo zero.
+     * Despesas e pagamentos estornados são ignorados.
      */
     public static List<Saldo> consolidar(Set<UUID> membros,
                                          Collection<Despesa> despesas,
