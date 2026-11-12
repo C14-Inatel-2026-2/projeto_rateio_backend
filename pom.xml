@@ -60,7 +60,32 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            
+
+            <!-- O Jib monta e publica a imagem sem depender de um daemon Docker, que o agente
+                 Windows do Jenkins nao possui. -->
+            <plugin>
+                <groupId>com.google.cloud.tools</groupId>
+                <artifactId>jib-maven-plugin</artifactId>
+                <version>3.5.2</version>
+                <configuration>
+                    <from>
+                        <image>eclipse-temurin:21-jre</image>
+                    </from>
+                    <to>
+                        <image>0vat5ug/c14-rateio</image>
+                        <auth>
+                            <username>${env.DOCKERHUB_USR}</username>
+                            <password>${env.DOCKERHUB_PSW}</password>
+                        </auth>
+                    </to>
+                    <container>
+                        <ports>
+                            <port>8080</port>
+                        </ports>
+                    </container>
+                </configuration>
+            </plugin>
+
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
