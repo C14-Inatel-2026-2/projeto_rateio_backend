@@ -29,6 +29,30 @@ public class PagamentoService {
     private final PagamentoRepository pagamentoRepositorio;
     private final DespesaRepository despesaRepositorio;
 
+    private ExtratoDetalhe montarExtratoPagamento(PagamentoEntidade pagamento) {
+        return new ExtratoDetalhe(
+                TipoMovimentacao.PAGAMENTO,
+                pagamento.getId(),
+                pagamento.getDe().getId(),
+                pagamento.getDe().getNome(),
+                pagamento.getValor(),
+                pagamento.getStatus().name(),
+                pagamento.getCriadoEm());
+    }
+
+    private ExtratoDetalhe montarExtratoDespesa(DespesaEntidade despesa) {
+        return new ExtratoDetalhe(
+                TipoMovimentacao.DESPESA,
+                despesa.getId(),
+                despesa.getPagador().getId(),
+                despesa.getPagador().getNome(),
+                despesa.getValorTotal(),
+                despesa.getStatus().name(),
+                despesa.getCriadaEm());
+    }
+
+
+
     public PagamentoService(
             GrupoRepository grupoRepositorio,
             GrupoMembroRepository participacaoRepositorio,
@@ -150,25 +174,11 @@ public class PagamentoService {
         List<ExtratoDetalhe> extrato = new ArrayList<>();
 
         for (PagamentoEntidade pagamento : pagamentos) {
-            extrato.add(new ExtratoDetalhe(
-                    TipoMovimentacao.PAGAMENTO,
-                    pagamento.getId(),
-                    pagamento.getDe().getId(),
-                    pagamento.getDe().getNome(),
-                    pagamento.getValor(),
-                    pagamento.getStatus().name(),
-                    pagamento.getCriadoEm()));
+            extrato.add(montarExtratoPagamento(pagamento));
         }
 
         for (DespesaEntidade despesa : despesas) {
-            extrato.add(new ExtratoDetalhe(
-                    TipoMovimentacao.DESPESA,
-                    despesa.getId(),
-                    despesa.getPagador().getId(),
-                    despesa.getPagador().getNome(),
-                    despesa.getValorTotal(),
-                    despesa.getStatus().name(),
-                    despesa.getCriadaEm()));
+            extrato.add(montarExtratoDespesa(despesa));
         }
 
         extrato.sort(Comparator.comparing(ExtratoDetalhe::data).thenComparing(ExtratoDetalhe::id));
