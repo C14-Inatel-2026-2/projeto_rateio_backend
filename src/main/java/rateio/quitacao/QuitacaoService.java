@@ -15,6 +15,10 @@ public class QuitacaoService {
 
     private final SaldoService saldoService;
 
+    private Saldo converterParaSaldo(SaldoDetalhe saldo) {
+        return new Saldo(saldo.membroId(), saldo.saldo());
+    }
+
     public QuitacaoService(GrupoRepository grupoRepositorio, GrupoMembroRepository participacaoRepositorio, SaldoService saldoService) {
         this.saldoService = saldoService;
     }
@@ -25,8 +29,10 @@ public class QuitacaoService {
 
         List<Saldo> saldosDominio = new ArrayList<>();
         Map<UUID, String> nomes = new HashMap<>();
+
         for (SaldoDetalhe saldo : saldos) {
-            saldosDominio.add(new Saldo(saldo.membroId(), saldo.saldo()));
+            saldosDominio.add(converterParaSaldo(saldo));
+
             nomes.put(saldo.membroId(), saldo.nome());
         }
 
