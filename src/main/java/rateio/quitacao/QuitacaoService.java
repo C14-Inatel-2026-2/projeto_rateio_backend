@@ -19,6 +19,20 @@ public class QuitacaoService {
         return new Saldo(saldo.membroId(), saldo.saldo());
     }
 
+
+    private QuitacaoDetalhe converterParaDetalhe(
+            Quitacao.Transferencia transferencia,
+            Map<UUID, String> nomes) {
+
+        return new QuitacaoDetalhe(
+                transferencia.deId(),
+                nomes.get(transferencia.deId()),
+                transferencia.paraId(),
+                nomes.get(transferencia.paraId()),
+                transferencia.valor().setScale(2)
+        );
+    }
+
     public QuitacaoService(GrupoRepository grupoRepositorio, GrupoMembroRepository participacaoRepositorio, SaldoService saldoService) {
         this.saldoService = saldoService;
     }
@@ -39,14 +53,11 @@ public class QuitacaoService {
         Quitacao plano = Quitacao.apartirDe(saldosDominio);
 
         List<QuitacaoDetalhe> resposta = new ArrayList<>();
+
         for (Quitacao.Transferencia transferencia : plano.transferencias()) {
-            resposta.add(new QuitacaoDetalhe(
-                    transferencia.deId(),
-                    nomes.get(transferencia.deId()),
-                    transferencia.paraId(),
-                    nomes.get(transferencia.paraId()),
-                    transferencia.valor().setScale(2)));
+            resposta.add(converterParaDetalhe(transferencia, nomes));
         }
+
         return resposta;
     }
 }
