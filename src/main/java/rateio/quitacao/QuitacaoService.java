@@ -2,8 +2,8 @@ package rateio.quitacao;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import rateio.grupo.GrupoMembroRepository;
-import rateio.grupo.GrupoRepository;
+import rateio.grupo.repository.GrupoMembroRepository;
+import rateio.grupo.repository.GrupoRepository;
 import rateio.saldo.Saldo;
 import rateio.saldo.SaldoDetalhe;
 import rateio.saldo.SaldoService;
