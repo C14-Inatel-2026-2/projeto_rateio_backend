@@ -2,17 +2,18 @@ package rateio.pagamento;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import rateio.despesa.*;
-import rateio.grupo.GrupoMembroRepository;
-import rateio.grupo.GrupoRepository;
+import rateio.grupo.repository.GrupoMembroRepository;
+import rateio.grupo.repository.GrupoRepository;
 import rateio.membro.MembroNaoEncontradoException;
 import rateio.membro.MembroRepository;
+import rateio.despesa.repository.DespesaRepository;
+import rateio.despesa.entity.DespesaEntidade;
+import rateio.grupo.entity.GrupoEntidade;
 
 import rateio.quitacao.QuitacaoDetalhe;
 import rateio.quitacao.QuitacaoService;
 import rateio.saldo.SaldoService;
-import rateio.grupo.GrupoEntidade;
-import rateio.grupo.GrupoNaoEncontradoException;
+import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.membro.Membro;
 
 import java.math.BigDecimal;
