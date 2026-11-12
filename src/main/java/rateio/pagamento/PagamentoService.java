@@ -29,12 +29,19 @@ public class PagamentoService {
     private final PagamentoRepository pagamentoRepositorio;
     private final DespesaRepository despesaRepositorio;
 
-    public PagamentoService(GrupoRepository grupoRepositorio, GrupoMembroRepository participacaoRepositorio, MembroRepository membroRepositorio, DespesaRepository despesaRepositorio, QuitacaoService quitacaoService, SaldoService saldoService, PagamentoRepository pagamentoRepositorio, DespesaRepository despesaRepositorio1) {
+    public PagamentoService(
+            GrupoRepository grupoRepositorio,
+            GrupoMembroRepository participacaoRepositorio,
+            MembroRepository membroRepositorio,
+            DespesaRepository despesaRepositorio,
+            QuitacaoService quitacaoService,
+            PagamentoRepository pagamentoRepositorio) {
+
         this.grupoRepositorio = grupoRepositorio;
         this.participacaoRepositorio = participacaoRepositorio;
         this.membroRepositorio = membroRepositorio;
         this.quitacaoService = quitacaoService;
-        this.despesaRepositorio = despesaRepositorio1;
+        this.despesaRepositorio = despesaRepositorio;
         this.pagamentoRepositorio = pagamentoRepositorio;
     }
 
