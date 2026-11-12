@@ -61,14 +61,12 @@ public class PagamentoService {
             throw new MembroNaoEncontradoException();
         }
 
-        QuitacaoDetalhe transferenciaEncontrada = null;
-
-        for(QuitacaoDetalhe transferencia : transferencias){
-            if(transferencia.deId().equals(registradorId) && transferencia.paraId().equals(paraId)){
-                transferenciaEncontrada = transferencia;
-                break;
-            }
-        }
+        QuitacaoDetalhe transferenciaEncontrada = transferencias.stream()
+                .filter(transferencia ->
+                        transferencia.deId().equals(registradorId)
+                                && transferencia.paraId().equals(paraId))
+                .findFirst()
+                .orElse(null);
 
         if (transferenciaEncontrada == null || valor.compareTo(transferenciaEncontrada.valor()) > 0) {
             throw new ValorMaiorDividaException();
