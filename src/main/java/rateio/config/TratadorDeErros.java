@@ -10,10 +10,13 @@ import rateio.membro.CredenciaisInvalidasException;
 
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
-import rateio.grupo.GrupoComPoucosMembrosException;
-import rateio.grupo.GrupoNaoEncontradoException;
-import rateio.grupo.MembroRepetidoException;
+import rateio.grupo.exception.GrupoComPoucosMembrosException;
+import rateio.grupo.exception.GrupoNaoEncontradoException;
+import rateio.grupo.exception.MembroRepetidoException;
 import rateio.membro.MembroNaoEncontradoException;
+import rateio.despesa.exception.DespesaJaEstornadaException;
+import rateio.despesa.exception.DespesaNaoEncontradaException;
+import rateio.grupo.exception.GrupoComDespesasException;
 import rateio.despesa.DespesaJaEstornadaException;
 import rateio.despesa.DespesaNaoEncontradaException;
 import rateio.grupo.GrupoComDespesasException;

@@ -38,16 +38,16 @@ pipeline {
         stage('Deploy') {
             when {
                 beforeAgent true
-                branch 'main'
+                expression { env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main' }
             }
             environment {
-                DEPLOY_DIR = 'C:\\deploy\\rateio-backend'
+                // Expoe DOCKERHUB_USR e DOCKERHUB_PSW, que o jib-maven-plugin le no pom.xml.
+                DOCKERHUB = credentials('dockerhub')
             }
             steps {
-                bat '''
-                    if not exist "%DEPLOY_DIR%" mkdir "%DEPLOY_DIR%"
-                    copy /Y target\\*.jar "%DEPLOY_DIR%"
-                '''
+                // A tag com o numero do build permite voltar a uma versao especifica; "latest"
+                // acompanha sempre a main.
+                bat 'mvn -B -DskipTests compile jib:build -Djib.to.tags=%BUILD_NUMBER%,latest'
             }
         }
     }
