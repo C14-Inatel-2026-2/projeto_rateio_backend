@@ -13,12 +13,11 @@ import rateio.grupo.entity.GrupoEntidade;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.repository.GrupoRepository;
-import rateio.membro.Membro;
-import rateio.membro.MembroNaoEncontradoException;
-import rateio.membro.MembroRepository;
+import rateio.membro.entity.Membro;
+import rateio.membro.exception.MembroNaoEncontradoException;
+import rateio.membro.repository.MembroRepository;
 import rateio.quitacao.QuitacaoDetalhe;
 import rateio.quitacao.QuitacaoService;
-import rateio.saldo.SaldoService;
 import rateio.despesa.domain.StatusDespesa;
 
 import java.math.BigDecimal;

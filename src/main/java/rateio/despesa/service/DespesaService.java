@@ -19,9 +19,9 @@ import rateio.despesa.repository.ParcelaRepository;
 import rateio.grupo.entity.GrupoEntidade;
 import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.service.AcessoAoGrupo;
-import rateio.membro.Membro;
-import rateio.membro.MembroNaoEncontradoException;
-import rateio.membro.MembroRepository;
+import rateio.membro.entity.Membro;
+import rateio.membro.exception.MembroNaoEncontradoException;
+import rateio.membro.repository.MembroRepository;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

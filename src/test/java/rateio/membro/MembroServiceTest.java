@@ -6,6 +6,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import rateio.membro.entity.Membro;
+import rateio.membro.exception.CredenciaisInvalidasException;
+import rateio.membro.exception.EmailJaCadastradoException;
+import rateio.membro.repository.MembroRepository;
+import rateio.membro.service.MembroService;
+
 import java.util.Optional;
 
 import static org.mockito.Mockito.never;

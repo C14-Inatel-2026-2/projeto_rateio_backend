@@ -15,7 +15,7 @@ import rateio.grupo.dto.CriarGrupoRequest;
 import rateio.grupo.dto.GrupoResponse;
 import rateio.grupo.dto.GrupoResumoResponse;
 import rateio.grupo.service.GrupoService;
-import rateio.membro.MembroResponse;
+import rateio.membro.dto.MembroResponse;
 
 import java.util.List;
 import java.util.UUID;

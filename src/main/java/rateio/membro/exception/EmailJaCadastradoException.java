@@ -1,4 +1,4 @@
-package rateio.membro;
+package rateio.membro.exception;
 
 public class EmailJaCadastradoException extends RuntimeException {
 

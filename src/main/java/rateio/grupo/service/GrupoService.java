@@ -12,9 +12,9 @@ import rateio.grupo.exception.GrupoComPoucosMembrosException;
 import rateio.grupo.exception.MembroRepetidoException;
 import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.repository.GrupoRepository;
-import rateio.membro.Membro;
-import rateio.membro.MembroNaoEncontradoException;
-import rateio.membro.MembroRepository;
+import rateio.membro.entity.Membro;
+import rateio.membro.exception.MembroNaoEncontradoException;
+import rateio.membro.repository.MembroRepository;
 
 import java.time.Instant;
 import java.util.ArrayList;

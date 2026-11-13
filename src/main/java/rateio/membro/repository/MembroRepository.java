@@ -1,6 +1,7 @@
-package rateio.membro;
+package rateio.membro.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import rateio.membro.entity.Membro;
 
 import java.util.Optional;
 import java.util.UUID;

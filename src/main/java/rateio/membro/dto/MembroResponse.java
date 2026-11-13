@@ -1,4 +1,6 @@
-package rateio.membro;
+package rateio.membro.dto;
+
+import rateio.membro.entity.Membro;
 
 import java.util.UUID;
 

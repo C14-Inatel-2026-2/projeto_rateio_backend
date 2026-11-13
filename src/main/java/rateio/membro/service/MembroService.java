@@ -1,8 +1,12 @@
-package rateio.membro;
+package rateio.membro.service;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import rateio.membro.entity.Membro;
+import rateio.membro.exception.CredenciaisInvalidasException;
+import rateio.membro.exception.EmailJaCadastradoException;
+import rateio.membro.repository.MembroRepository;
 
 @Service
 public class MembroService {

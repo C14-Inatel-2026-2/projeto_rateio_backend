@@ -11,7 +11,7 @@ import rateio.grupo.entity.GrupoMembroEntidade;
 import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.grupo.repository.GrupoRepository;
-import rateio.membro.Membro;
+import rateio.membro.entity.Membro;
 import rateio.pagamento.Pagamento;
 import rateio.pagamento.PagamentoEntidade;
 import rateio.pagamento.PagamentoRepository;

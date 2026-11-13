@@ -1,4 +1,4 @@
-package rateio.membro;
+package rateio.membro.entity;
 
 import jakarta.persistence.*;
 import java.util.UUID;
