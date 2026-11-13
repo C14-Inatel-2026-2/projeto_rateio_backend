@@ -1,4 +1,4 @@
-package rateio.membro;
+package rateio.membro.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -10,7 +10,6 @@ import rateio.membro.entity.Membro;
 import rateio.membro.exception.CredenciaisInvalidasException;
 import rateio.membro.exception.EmailJaCadastradoException;
 import rateio.membro.repository.MembroRepository;
-import rateio.membro.service.MembroService;
 
 import java.util.Optional;
 
