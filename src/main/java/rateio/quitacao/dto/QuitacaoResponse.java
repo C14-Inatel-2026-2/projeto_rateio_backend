@@ -1,4 +1,4 @@
-package rateio.quitacao;
+package rateio.quitacao.dto;
 
 import java.util.UUID;
 

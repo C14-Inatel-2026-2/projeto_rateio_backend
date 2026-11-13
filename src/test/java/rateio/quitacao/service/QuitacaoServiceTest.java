@@ -1,4 +1,4 @@
-package rateio.quitacao;
+package rateio.quitacao.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -6,6 +6,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
+import rateio.quitacao.dto.QuitacaoDetalhe;
 import rateio.saldo.SaldoDetalhe;
 import rateio.saldo.SaldoService;
 

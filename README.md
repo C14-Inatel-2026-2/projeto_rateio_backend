@@ -212,8 +212,8 @@ Os relatórios ficam em `target/surefire-reports/`, e o de cobertura do JaCoCo e
 | `rateio.grupo.service.GrupoServiceTest` | 38 |
 | `rateio.membro.service.MembroServiceTest` | 11 |
 | `rateio.pagamento.domain.PagamentoTest` | 22 |
-| `rateio.quitacao.QuitacaoServiceTest` | 6 |
-| `rateio.quitacao.QuitacaoTest` | 4 |
+| `rateio.quitacao.service.QuitacaoServiceTest` | 6 |
+| `rateio.quitacao.domain.QuitacaoTest` | 4 |
 | `rateio.quitacao.TesteQuitacao` | 4 |
 | `rateio.saldo.SaldoServiceTest` | 9 |
 | `rateio.saldo.SaldoTest` | 22 |

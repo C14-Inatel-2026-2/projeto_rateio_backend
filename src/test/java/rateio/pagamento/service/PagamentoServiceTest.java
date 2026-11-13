@@ -27,8 +27,8 @@ import rateio.pagamento.exception.PagamentoNaoEncontradoException;
 import rateio.pagamento.exception.ValorInvalidoException;
 import rateio.pagamento.exception.ValorMaiorDividaException;
 import rateio.pagamento.repository.PagamentoRepository;
-import rateio.quitacao.QuitacaoDetalhe;
-import rateio.quitacao.QuitacaoService;
+import rateio.quitacao.dto.QuitacaoDetalhe;
+import rateio.quitacao.service.QuitacaoService;
 import rateio.despesa.domain.StatusDespesa;
 
 import java.math.BigDecimal;

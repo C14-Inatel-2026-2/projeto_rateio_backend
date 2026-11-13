@@ -1,4 +1,4 @@
-package rateio.quitacao;
+package rateio.quitacao.domain;
 
 
 import java.math.BigDecimal;

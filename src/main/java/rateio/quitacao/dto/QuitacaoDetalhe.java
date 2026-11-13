@@ -1,4 +1,4 @@
-package rateio.quitacao;
+package rateio.quitacao.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;

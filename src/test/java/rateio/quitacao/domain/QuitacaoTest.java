@@ -1,4 +1,4 @@
-package rateio.quitacao;
+package rateio.quitacao.domain;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -15,7 +15,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import rateio.quitacao.Quitacao.Transferencia;
+import rateio.quitacao.domain.Quitacao.Transferencia;
 import rateio.saldo.Saldo;
 
 public class QuitacaoTest {
