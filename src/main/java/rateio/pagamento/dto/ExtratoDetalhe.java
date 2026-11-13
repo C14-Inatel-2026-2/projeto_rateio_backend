@@ -1,4 +1,6 @@
-package rateio.pagamento;
+package rateio.pagamento.dto;
+
+import rateio.pagamento.domain.TipoMovimentacao;
 
 import java.math.BigDecimal;
 import java.time.Instant;

@@ -1,8 +1,9 @@
-package rateio.pagamento;
+package rateio.pagamento.entity;
 
 import jakarta.persistence.*;
 import rateio.grupo.entity.GrupoEntidade;
 import rateio.membro.entity.Membro;
+import rateio.pagamento.domain.StatusPagamento;
 
 import java.math.BigDecimal;
 import java.time.Instant;

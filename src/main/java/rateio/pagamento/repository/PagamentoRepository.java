@@ -1,6 +1,8 @@
-package rateio.pagamento;
+package rateio.pagamento.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import rateio.pagamento.domain.StatusPagamento;
+import rateio.pagamento.entity.PagamentoEntidade;
 
 import java.util.List;
 import java.util.Optional;

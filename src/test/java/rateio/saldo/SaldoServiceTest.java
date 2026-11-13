@@ -16,9 +16,9 @@ import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.grupo.repository.GrupoRepository;
 import rateio.membro.entity.Membro;
-import rateio.pagamento.PagamentoEntidade;
-import rateio.pagamento.PagamentoRepository;
-import rateio.pagamento.StatusPagamento;
+import rateio.pagamento.entity.PagamentoEntidade;
+import rateio.pagamento.repository.PagamentoRepository;
+import rateio.pagamento.domain.StatusPagamento;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

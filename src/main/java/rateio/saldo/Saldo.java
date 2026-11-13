@@ -8,7 +8,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import rateio.despesa.domain.Despesa;
-import rateio.pagamento.Pagamento;
+import rateio.pagamento.domain.Pagamento;
 
 public record Saldo(UUID membroId, BigDecimal valor) {
 

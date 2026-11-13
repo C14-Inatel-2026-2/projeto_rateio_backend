@@ -17,10 +17,10 @@ import rateio.membro.exception.MembroNaoEncontradoException;
 import rateio.despesa.exception.DespesaJaEstornadaException;
 import rateio.despesa.exception.DespesaNaoEncontradaException;
 import rateio.grupo.exception.GrupoComDespesasException;
-import rateio.pagamento.PagamentoJaEstornadoException;
-import rateio.pagamento.PagamentoNaoEncontradoException;
-import rateio.pagamento.ValorInvalidoException;
-import rateio.pagamento.ValorMaiorDividaException;
+import rateio.pagamento.exception.PagamentoJaEstornadoException;
+import rateio.pagamento.exception.PagamentoNaoEncontradoException;
+import rateio.pagamento.exception.ValorInvalidoException;
+import rateio.pagamento.exception.ValorMaiorDividaException;
 
 
 @RestControllerAdvice

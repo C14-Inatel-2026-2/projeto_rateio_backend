@@ -1,4 +1,4 @@
-package rateio.pagamento;
+package rateio.pagamento.exception;
 
 public class PagamentoJaEstornadoException extends RuntimeException {
 

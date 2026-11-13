@@ -1,4 +1,4 @@
-package rateio.pagamento;
+package rateio.pagamento.domain;
 
 public enum StatusPagamento {
     ATIVO,

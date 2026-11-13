@@ -13,7 +13,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import rateio.despesa.domain.Despesa;
-import rateio.pagamento.Pagamento;
+import rateio.pagamento.domain.Pagamento;
 
 public class SaldoTest {
 

@@ -1,4 +1,4 @@
-package rateio.pagamento;
+package rateio.pagamento.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +16,17 @@ import rateio.grupo.repository.GrupoRepository;
 import rateio.membro.entity.Membro;
 import rateio.membro.exception.MembroNaoEncontradoException;
 import rateio.membro.repository.MembroRepository;
+import rateio.pagamento.domain.StatusPagamento;
+import rateio.pagamento.domain.TipoMovimentacao;
+import rateio.pagamento.dto.EstornoPagamentoDetalhe;
+import rateio.pagamento.dto.ExtratoDetalhe;
+import rateio.pagamento.dto.PagamentoDetalhe;
+import rateio.pagamento.entity.PagamentoEntidade;
+import rateio.pagamento.exception.PagamentoJaEstornadoException;
+import rateio.pagamento.exception.PagamentoNaoEncontradoException;
+import rateio.pagamento.exception.ValorInvalidoException;
+import rateio.pagamento.exception.ValorMaiorDividaException;
+import rateio.pagamento.repository.PagamentoRepository;
 import rateio.quitacao.QuitacaoDetalhe;
 import rateio.quitacao.QuitacaoService;
 import rateio.despesa.domain.StatusDespesa;

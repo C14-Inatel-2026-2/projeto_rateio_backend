@@ -1,4 +1,4 @@
-package rateio.pagamento;
+package rateio.pagamento.domain;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

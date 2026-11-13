@@ -1,4 +1,4 @@
-package rateio.pagamento;
+package rateio.pagamento.domain;
 
 import java.math.BigDecimal;
 import java.time.Instant;

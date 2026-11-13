@@ -1,4 +1,4 @@
-package rateio.pagamento;
+package rateio.pagamento.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -10,6 +10,18 @@ import rateio.despesa.repository.DespesaRepository;
 import rateio.despesa.entity.DespesaEntidade;
 import rateio.grupo.entity.GrupoEntidade;
 
+import rateio.pagamento.domain.Pagamento;
+import rateio.pagamento.domain.StatusPagamento;
+import rateio.pagamento.domain.TipoMovimentacao;
+import rateio.pagamento.dto.EstornoPagamentoDetalhe;
+import rateio.pagamento.dto.ExtratoDetalhe;
+import rateio.pagamento.dto.PagamentoDetalhe;
+import rateio.pagamento.entity.PagamentoEntidade;
+import rateio.pagamento.exception.PagamentoJaEstornadoException;
+import rateio.pagamento.exception.PagamentoNaoEncontradoException;
+import rateio.pagamento.exception.ValorInvalidoException;
+import rateio.pagamento.exception.ValorMaiorDividaException;
+import rateio.pagamento.repository.PagamentoRepository;
 import rateio.quitacao.QuitacaoDetalhe;
 import rateio.quitacao.QuitacaoService;
 import rateio.saldo.SaldoService;

@@ -1,4 +1,6 @@
-package rateio.pagamento;
+package rateio.pagamento.dto;
+
+import rateio.pagamento.domain.StatusPagamento;
 
 import java.time.Instant;
 import java.util.UUID;
