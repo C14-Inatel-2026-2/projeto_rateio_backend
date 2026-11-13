@@ -1,4 +1,4 @@
-package rateio.saldo;
+package rateio.saldo.service;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -16,6 +16,8 @@ import rateio.pagamento.domain.Pagamento;
 import rateio.pagamento.entity.PagamentoEntidade;
 import rateio.pagamento.repository.PagamentoRepository;
 import rateio.pagamento.domain.StatusPagamento;
+import rateio.saldo.domain.Saldo;
+import rateio.saldo.dto.SaldoDetalhe;
 
 import java.util.ArrayList;
 import java.util.Comparator;

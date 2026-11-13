@@ -7,8 +7,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.quitacao.dto.QuitacaoDetalhe;
-import rateio.saldo.SaldoDetalhe;
-import rateio.saldo.SaldoService;
+import rateio.saldo.dto.SaldoDetalhe;
+import rateio.saldo.service.SaldoService;
 
 import java.math.BigDecimal;
 import java.util.List;

@@ -1,4 +1,4 @@
-package rateio.saldo;
+package rateio.saldo.domain;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;

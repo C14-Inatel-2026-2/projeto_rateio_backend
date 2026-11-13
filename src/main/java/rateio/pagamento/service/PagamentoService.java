@@ -24,7 +24,7 @@ import rateio.pagamento.exception.ValorMaiorDividaException;
 import rateio.pagamento.repository.PagamentoRepository;
 import rateio.quitacao.dto.QuitacaoDetalhe;
 import rateio.quitacao.service.QuitacaoService;
-import rateio.saldo.SaldoService;
+import rateio.saldo.service.SaldoService;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.membro.entity.Membro;
 

@@ -1,4 +1,4 @@
-package rateio.saldo;
+package rateio.saldo.dto;
 
 import java.math.BigDecimal;
 import java.util.UUID;

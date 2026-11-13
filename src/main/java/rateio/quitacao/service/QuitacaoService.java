@@ -6,9 +6,9 @@ import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.repository.GrupoRepository;
 import rateio.quitacao.domain.Quitacao;
 import rateio.quitacao.dto.QuitacaoDetalhe;
-import rateio.saldo.Saldo;
-import rateio.saldo.SaldoDetalhe;
-import rateio.saldo.SaldoService;
+import rateio.saldo.domain.Saldo;
+import rateio.saldo.dto.SaldoDetalhe;
+import rateio.saldo.service.SaldoService;
 
 import java.util.*;
 

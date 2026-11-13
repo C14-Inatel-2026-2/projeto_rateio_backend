@@ -9,7 +9,7 @@ import java.util.PriorityQueue;
 import java.util.UUID;
 
 
-import rateio.saldo.Saldo;
+import rateio.saldo.domain.Saldo;
 
 public class Quitacao {
     public record Transferencia(UUID deId, UUID paraId, BigDecimal valor) {

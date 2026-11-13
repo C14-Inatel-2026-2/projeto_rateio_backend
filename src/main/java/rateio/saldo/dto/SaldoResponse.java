@@ -1,4 +1,4 @@
-package rateio.saldo;
+package rateio.saldo.dto;
 
 import java.util.UUID;
 

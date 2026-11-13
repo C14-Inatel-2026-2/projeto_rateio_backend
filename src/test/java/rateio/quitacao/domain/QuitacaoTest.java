@@ -16,7 +16,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import rateio.quitacao.domain.Quitacao.Transferencia;
-import rateio.saldo.Saldo;
+import rateio.saldo.domain.Saldo;
 
 public class QuitacaoTest {
 

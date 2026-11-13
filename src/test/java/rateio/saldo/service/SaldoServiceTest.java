@@ -1,4 +1,4 @@
-package rateio.saldo;
+package rateio.saldo.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,6 +19,7 @@ import rateio.membro.entity.Membro;
 import rateio.pagamento.entity.PagamentoEntidade;
 import rateio.pagamento.repository.PagamentoRepository;
 import rateio.pagamento.domain.StatusPagamento;
+import rateio.saldo.dto.SaldoDetalhe;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
