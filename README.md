@@ -430,3 +430,87 @@ Jenkins não foi feita, porque o Jenkins local ainda não estava configurado.
 e do histórico local do Claude Code. Na atualização de 12/11/2026, revisou os requisitos, a
 contagem de testes (204 testes, nenhuma falha), as instruções de execução e o pipeline para
 refletir o estado após a refatoração.
+
+
+### Uso de IA por Cauã
+
+> Os prompts abaixo foram resumidos e reescritos para organização; refletem o pedido feito, não o texto exato.
+
+| Ferramenta | Modelo | Finalidade |
+|---|---|---|
+| Claude (chat web) | Claude Sonnet 5.5 (`claude-sonnet-5-5`) | Contrato de rotas, molde das tabelas, apoio nas rotas e desenvolvimento, configuração do Jenkins e do Railway |
+
+**Para que foi usada:** criação do contrato de rotas a partir das histórias de usuário; molde
+das tabelas do banco (lógica e ligações); apoio no desenvolvimento das classes de domínio e seus testes;
+apoio no desenvolvimento das rotas e seus testes; configuração do Jenkins e do Railway 
+e tarefas gerais de organização e documentação (estruturação do README,
+histórias de usuário no Jira, descrições de PR, mensagens de commit e resolução de problemas
+com Git).
+
+**Dinâmica de uso:** individual, em conversa com o Claude, como um tutor. Cauã tentava
+primeiro, levava a dúvida ou o erro e decidia o que aplicar. Não houve revisão de PR por IA.
+
+#### Contrato de rotas
+
+**Prompt:**
+
+> Com base nestas histórias de usuário, monte o contrato das rotas da API REST: método,
+> caminho, corpo, resposta de sucesso e erros possíveis.
+
+**Resultado:** a IA propôs o contrato inicial. Cauã **ajustou** (por exemplo, o
+`?membroId=` como parâmetro de consulta em todas as rotas de grupo, sem aninhar sob
+`/membros`) e manteve o documento atualizado a cada fatia. A cada ajuste feito, era solicitado
+uma nova versão do contrato de rotas para garantir que estaria atualizada para uso do frontend.
+
+#### Molde das tabelas do banco
+
+**Prompt:**
+
+> Com base nas histórias de usuário e no contrato de rotas, desenhe as tabelas do banco e as
+> ligações entre elas (chaves primárias e estrangeiras). Não precisa gerar as entidades Java.
+
+**Resultado:** a IA sugeriu o desenho das seis tabelas (`membro`, `grupo`, `grupo_membro`,
+`despesa`, `parcela`, `pagamento`) e as ligações. **Aceito com ajustes** feitos por Cauã. As
+classes de entidade foram escritas por ele no IntelliJ.
+
+#### Configuração do Jenkins e do deploy
+
+**Prompt:**
+
+> O stage de deploy do Jenkinsfile publica a imagem no Docker Hub e foi criado por um colega.
+> Como o Jenkins roda local na minha máquina, como verifico se o deploy está funcionando?
+
+**Resultado:** a IA explicou que a credencial `dockerhub` precisa existir no Jenkins local.
+Quando o deploy falhou com `401 Unauthorized` ao baixar a imagem base, a IA identificou o
+login vencido do Docker em `config.json`, e o `docker logout` resolveu (**aceito**).
+
+#### Deploy automático no Railway
+
+**Prompt:**
+
+> Depois de publicar a imagem no Docker Hub, o Railway não atualizou o serviço sozinho. Como
+> faço o deploy no domínio do Railway acontecer automaticamente a cada merge no repositório?
+
+**Resultado:** a IA sugeriu o *auto update* do Railway, que foi configurado mas **não
+funcionou** com a tag `latest` (**descartado**). A solução adotada foi o Jenkins executar
+`railway redeploy` ao fim do stage Deploy, com um token de projeto guardado na credencial
+`railway-token` (**aceito**). O push direto na `main` foi recusado pela proteção da branch;
+a alteração seguiu por Pull Request.
+
+#### Tarefas gerais
+
+**Prompts:**
+
+1. > Estruture o README do projeto com descrição, arquitetura, requisitos e instruções de
+   > execução.
+
+2. > Crie histórias de usuário bem definidas, com critérios de aceite, para importar no Jira.
+
+3. > Escreva um título e uma descrição simples para o Pull Request que adiciona o redeploy no
+   > Railway ao Jenkinsfile.
+
+**Resultado:** a IA gerou a estrutura do README, as histórias de usuário e a descrição do PR.
+Cauã **revisou e ajustou** o conteúdo ao estado real do projeto antes de usar. Também pediu
+mensagens de commit seguindo o padrão do projeto e ajuda para resolver problemas de Git
+(`cherry-pick` de um commit para outra branch e remote do
+repositório que mudou de endereço)
