@@ -24,7 +24,7 @@ as dívidas.
 ```text
 Membro → Grupo (participações) → Despesa (parcelas) → Saldo (por membro) → Quitação (transferências)
                                                            ↑
-                                                       Pagamento (apenas domínio)
+                                                       Pagamento (abate o saldo)
 ```
 
 **Exemplo:** Ana paga R$ 90,00 de um jantar dividido igualmente com Bruno e Carla.
@@ -37,9 +37,9 @@ Membro → Grupo (participações) → Despesa (parcelas) → Saldo (por membro)
 
 O plano de quitação tem duas transferências: Bruno → Ana (R$ 30,00) e Carla → Ana (R$ 30,00).
 
-**Estado atual:** membros, grupos e despesas são gravados no MySQL e expostos por HTTP; saldos
-e quitação são calculados a cada consulta. Pagamentos entre membros existem apenas como regra
-de negócio, sem rota nem tabela, e ainda não há autenticação por sessão ou token (ver
+**Estado atual:** membros, grupos, despesas e pagamentos são gravados no MySQL e expostos por
+HTTP; saldos e quitação são calculados a cada consulta, considerando as despesas e os
+pagamentos ativos. Ainda não há autenticação por sessão ou token (ver
 [Identificação de quem chama](#identificação-de-quem-chama)).
 
 ## Arquitetura
@@ -55,14 +55,20 @@ Cada requisição atravessa quatro camadas:
 4. **Entity e Repository:** as classes `...Entidade` (e `Membro`) mapeiam as tabelas; os
    repositórios são interfaces do Spring Data.
 
-Os pacotes são organizados por domínio. `despesa` e `grupo` são divididos ainda por tipo de
-arquivo, e os testes espelham essa estrutura:
+Os pacotes são organizados por domínio e divididos por tipo de arquivo. Os testes espelham essa
+estrutura:
 
 ```text
 src/main/java/rateio
 ├── RateioApplication.java
-├── config/          CORS, encoder de senha e tratador global de erros
-├── membro/          cadastro e login
+├── config/          CorsConfig, SegurancaConfig (encoder de senha), ErroResponse e tratador global de erros
+├── membro/
+│   ├── controller/  MembroController
+│   ├── service/     MembroService
+│   ├── entity/      Membro
+│   ├── repository/  MembroRepository
+│   ├── dto/         CadastroRequest, LoginRequest, MembroResponse
+│   └── exception/   exceções do membro
 ├── grupo/
 │   ├── controller/  GrupoController
 │   ├── service/     GrupoService, AcessoAoGrupo
@@ -79,9 +85,24 @@ src/main/java/rateio
 │   ├── repository/  DespesaRepository, ParcelaRepository
 │   ├── dto/         requests, responses e records de detalhe
 │   └── exception/   exceções da despesa
-├── saldo/           cálculo do saldo de cada membro
-├── quitacao/        plano de transferências
-└── pagamento/       regra de negócio de pagamentos (sem persistência)
+├── pagamento/
+│   ├── controller/  PagamentoController
+│   ├── service/     PagamentoService
+│   ├── domain/      Pagamento, StatusPagamento, TipoMovimentacao
+│   ├── entity/      PagamentoEntidade
+│   ├── repository/  PagamentoRepository
+│   ├── dto/         requests, responses e records de detalhe
+│   └── exception/   exceções do pagamento
+├── saldo/
+│   ├── controller/  SaldoController
+│   ├── service/     SaldoService
+│   ├── domain/      Saldo
+│   └── dto/         SaldoDetalhe, SaldoResponse
+└── quitacao/
+    ├── controller/  QuitacaoController
+    ├── service/     QuitacaoService
+    ├── domain/      Quitacao
+    └── dto/         QuitacaoDetalhe, QuitacaoResponse
 ```
 
 ### Modelo de dados
@@ -93,6 +114,7 @@ src/main/java/rateio
 | `grupo_membro` | participação de um membro em um grupo (par único) |
 | `despesa` | grupo, pagador, quem registrou, descrição, valor total, estratégia, status (`ATIVA` ou `ESTORNADA`) e datas de criação e estorno |
 | `parcela` | quanto cada membro deve em uma despesa (par despesa e membro único) |
+| `pagamento` | grupo, quem pagou (`de`), quem recebeu (`para`), valor, status (`ATIVO` ou `ESTORNADO`) e datas de criação e estorno |
 
 Os identificadores são UUID. Saldos e planos de quitação não são gravados.
 
@@ -112,6 +134,9 @@ Os identificadores são UUID. Saldos e planos de quitação não são gravados.
 | `POST /grupos/{grupoId}/despesas/{despesaId}/estorno` | Estorna uma despesa. | 200 |
 | `GET /grupos/{grupoId}/saldos` | Saldo de cada membro do grupo. | 200 |
 | `GET /grupos/{grupoId}/quitacao` | Transferências sugeridas para zerar os saldos. | 200 |
+| `POST /grupos/{grupoId}/pagamentos` | Registra um pagamento de quem chama para outro membro. Corpo: `paraId`, `valor`. | 201 |
+| `POST /grupos/{grupoId}/pagamentos/{pagamentoId}/estorno` | Estorna um pagamento. | 200 |
+| `GET /grupos/{grupoId}/extrato` | Lista as despesas e os pagamentos do grupo em ordem cronológica, ativos e estornados. | 200 |
 
 Corpo da criação de despesa (`peso` só é usado em `POR_PESO` e `valor` só em `VALORES_FIXOS`):
 
@@ -142,10 +167,10 @@ Os erros são devolvidos como `{"mensagem": "..."}`:
 
 | Status | Quando |
 |---|---|
-| 400 | Entrada inválida, parâmetro ausente, UUID malformado ou corpo ilegível |
+| 400 | Entrada inválida, parâmetro ausente, UUID malformado, corpo ilegível, valor de pagamento inválido ou maior que a dívida |
 | 401 | E-mail ou senha incorretos |
-| 404 | Grupo, membro ou despesa inexistente, ou grupo do qual quem chama não participa |
-| 409 | E-mail já cadastrado, membro repetido, grupo que ficaria com menos de 2 membros, remoção de membro em grupo com despesas, despesa já estornada |
+| 404 | Grupo, membro, despesa ou pagamento inexistente, ou grupo do qual quem chama não participa |
+| 409 | E-mail já cadastrado, membro repetido, grupo que ficaria com menos de 2 membros, remoção de membro em grupo com despesas, despesa ou pagamento já estornado |
 
 ## Requisitos funcionais
 
@@ -159,27 +184,28 @@ Os erros são devolvidos como `{"mensagem": "..."}`:
 | RF04 | Registrar despesas | Exige descrição, valor positivo com até 2 casas, pagador, estratégia e participantes. A soma das parcelas deve ser igual ao total, sem membro repetido. | ✅ | `DespesaService`, `Despesa` |
 | RF05 | Dividir despesas igualmente | Os centavos restantes vão, um por vez, para os primeiros participantes da lista. | ✅ | `DivisaoService` |
 | RF06 | Dividir despesas por peso ou por valores fixos | `POR_PESO` usa o método do maior resto para distribuir os centavos; `VALORES_FIXOS` exige que os valores informados somem o total. | ✅ | `DivisaoService` |
-| RF07 | Registrar pagamentos entre membros | A regra existe (pagador e recebedor diferentes, valor positivo), mas não há rota nem tabela, e o saldo ainda não considera pagamentos. | 🟡 | `Pagamento` |
-| RF08 | Estornar despesas e pagamentos | O estorno é lógico: o lançamento permanece no histórico e não pode ser estornado duas vezes. Disponível por HTTP apenas para despesas. | 🟡 | `DespesaService`, `Despesa`, `Pagamento` |
-| RF09 | Calcular o saldo de cada membro | Considera apenas despesas ativas. Positivo é credor, negativo é devedor, e membros sem movimentação aparecem com zero. | ✅ | `SaldoService`, `Saldo` |
+| RF07 | Registrar pagamentos entre membros | Pagador e recebedor diferentes, ambos do grupo; valor positivo com até 2 casas. O pagamento deve corresponder a uma transferência do plano de quitação e não pode passar do valor devido. | ✅ | `PagamentoService`, `Pagamento` |
+| RF08 | Estornar despesas e pagamentos | O estorno é lógico: o lançamento permanece no histórico e não pode ser estornado duas vezes. Disponível por HTTP para despesas e pagamentos. | ✅ | `DespesaService`, `Despesa`, `PagamentoService`, `Pagamento` |
+| RF09 | Calcular o saldo de cada membro | Considera as despesas e os pagamentos ativos. Positivo é credor, negativo é devedor, e membros sem movimentação aparecem com zero. | ✅ | `SaldoService`, `Saldo` |
 | RF10 | Gerar o plano de quitação | Cruza o maior credor com o maior devedor até zerar os saldos. Rejeita saldos cuja soma não seja zero. | ✅ | `QuitacaoService`, `Quitacao` |
 | RF11 | Validar o pertencimento ao grupo | Quem chama, o pagador e os participantes de uma despesa devem pertencer ao grupo. | ✅ | `AcessoAoGrupo`, `DespesaService` |
-| RF12 | Expor as funcionalidades por API HTTP | Todas as funcionalidades acima têm rota, exceto pagamentos. | 🟡 | controllers |
-| RF13 | Persistir os dados | Membros, grupos, participações, despesas e parcelas são gravados; pagamentos não. | 🟡 | repositórios |
+| RF12 | Expor as funcionalidades por API HTTP | Todas as funcionalidades acima têm rota. | ✅ | controllers |
+| RF13 | Persistir os dados | Membros, grupos, participações, despesas, parcelas e pagamentos são gravados. | ✅ | repositórios |
+| RF14 | Consultar o extrato do grupo | Lista despesas e pagamentos do grupo, ativos e estornados, em ordem cronológica. Quem chama deve participar do grupo. | ✅ | `PagamentoService` |
 
 ## Requisitos não funcionais
 
 | ID | Categoria | Requisito | Situação |
 |---|---|---|---|
 | RNF01 | Plataforma | O backend deve usar Java 21, Spring Boot 4.1.1 e Maven. | ✅ |
-| RNF02 | Persistência | Os dados devem ser armazenados em MySQL por meio de Spring Data JPA. Pagamentos ainda não são gravados. | 🟡 |
+| RNF02 | Persistência | Os dados devem ser armazenados em MySQL por meio de Spring Data JPA. | ✅ |
 | RNF03 | Precisão | Valores monetários devem usar `BigDecimal`, nunca ponto flutuante. As divisões são feitas em centavos inteiros, para que a soma das parcelas feche com o total. | ✅ |
 | RNF04 | Segurança | Credenciais do banco e do Docker Hub não devem ser versionadas: vêm de variáveis de ambiente e de credenciais do Jenkins. Senhas de membros são gravadas com hash BCrypt. | ✅ |
 | RNF05 | Rastreabilidade | Lançamentos não devem ser apagados ao serem estornados, e as datas de registro e de estorno devem ser guardadas. | ✅ |
 | RNF06 | Integridade | Objetos inválidos devem ser rejeitados na criação, e as listas retornadas não devem permitir alterar o estado interno. | ✅ |
 | RNF07 | Testabilidade | As regras de negócio e os serviços devem ter testes unitários automatizados, executáveis sem banco de dados. | ✅ |
 | RNF08 | Integração contínua | O Jenkins deve gerar o JAR, rodar os testes e publicar o relatório JUnit; na `main`, deve publicar a imagem Docker da aplicação. | ✅ |
-| RNF09 | Manutenibilidade | O código deve ser organizado em pacotes por domínio, separados por tipo de arquivo, e o versionamento deve seguir o [`CONVENTIONS.md`](CONVENTIONS.md). Os pacotes `membro`, `saldo` e `quitacao` ainda não foram divididos por tipo. | 🟡 |
+| RNF09 | Manutenibilidade | O código deve ser organizado em pacotes por domínio, separados por tipo de arquivo, e o versionamento deve seguir o [`CONVENTIONS.md`](CONVENTIONS.md). | ✅ |
 | RNF10 | Privacidade | Quem não participa de um grupo não deve conseguir distinguir um grupo alheio de um inexistente. | ✅ |
 | RNF11 | Autenticação | As rotas devem identificar quem chama de forma verificável. Hoje o `membroId` é aceito sem prova de identidade. | ⬜ |
 
@@ -210,13 +236,14 @@ Os relatórios ficam em `target/surefire-reports/`, e o de cobertura do JaCoCo e
 | `rateio.despesa.service.DivisaoServiceTest` | 18 |
 | `rateio.grupo.domain.GrupoTest` | 5 |
 | `rateio.grupo.service.GrupoServiceTest` | 38 |
-| `rateio.membro.service.MembroServiceTest` | 11 |
+| `rateio.membro.service.MembroServiceTest` | 10 |
 | `rateio.pagamento.domain.PagamentoTest` | 22 |
+| `rateio.pagamento.service.PagamentoServiceTest` | 31 |
+| `rateio.quitacao.domain.QuitacaoTest` | 6 |
 | `rateio.quitacao.service.QuitacaoServiceTest` | 6 |
-| `rateio.quitacao.domain.QuitacaoTest` | 4 |
-| `rateio.saldo.SaldoServiceTest` | 9 |
-| `rateio.saldo.SaldoTest` | 22 |
-| **Total** | **204** |
+| `rateio.saldo.domain.SaldoTest` | 22 |
+| `rateio.saldo.service.SaldoServiceTest` | 11 |
+| **Total** | **234** |
 
 Não há testes de controller nem de integração com o MySQL.
 
@@ -234,7 +261,7 @@ front-end em `http://localhost:3000`.
 2. Defina as variáveis de ambiente:
 
    | Variável | Obrigatória | Padrão |
-   |---|---|---|
+      |---|---|---|
    | `DB_URL` | Não | `jdbc:mysql://localhost:3306/rateio` |
    | `DB_USER` | Sim | |
    | `DB_PASSWORD` | Sim | |
