@@ -5,25 +5,22 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.http.converter.HttpMessageNotReadableException;
-import rateio.membro.EmailJaCadastradoException;
-import rateio.membro.CredenciaisInvalidasException;
+import rateio.membro.exception.EmailJaCadastradoException;
+import rateio.membro.exception.CredenciaisInvalidasException;
 
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import rateio.grupo.exception.GrupoComPoucosMembrosException;
 import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.grupo.exception.MembroRepetidoException;
-import rateio.membro.MembroNaoEncontradoException;
+import rateio.membro.exception.MembroNaoEncontradoException;
 import rateio.despesa.exception.DespesaJaEstornadaException;
 import rateio.despesa.exception.DespesaNaoEncontradaException;
 import rateio.grupo.exception.GrupoComDespesasException;
-import rateio.despesa.exception.DespesaJaEstornadaException;
-import rateio.despesa.exception.DespesaNaoEncontradaException;
-import rateio.grupo.exception.GrupoComDespesasException;
-import rateio.pagamento.PagamentoJaEstornadoException;
-import rateio.pagamento.PagamentoNaoEncontradoException;
-import rateio.pagamento.ValorInvalidoException;
-import rateio.pagamento.ValorMaiorDividaException;
+import rateio.pagamento.exception.PagamentoJaEstornadoException;
+import rateio.pagamento.exception.PagamentoNaoEncontradoException;
+import rateio.pagamento.exception.ValorInvalidoException;
+import rateio.pagamento.exception.ValorMaiorDividaException;
 
 
 @RestControllerAdvice

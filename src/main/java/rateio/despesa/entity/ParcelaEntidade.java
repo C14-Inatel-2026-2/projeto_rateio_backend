@@ -1,7 +1,7 @@
 package rateio.despesa.entity;
 
 import jakarta.persistence.*;
-import rateio.membro.Membro;
+import rateio.membro.entity.Membro;
 
 import java.math.BigDecimal;
 import java.util.UUID;

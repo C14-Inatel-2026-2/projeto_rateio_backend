@@ -1,6 +1,6 @@
 package rateio.grupo.dto;
 
-import rateio.membro.MembroResponse;
+import rateio.membro.dto.MembroResponse;
 
 import java.util.List;
 import java.util.UUID;

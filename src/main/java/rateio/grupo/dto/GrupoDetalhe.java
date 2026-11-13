@@ -1,7 +1,7 @@
 package rateio.grupo.dto;
 
 import rateio.grupo.entity.GrupoEntidade;
-import rateio.membro.Membro;
+import rateio.membro.entity.Membro;
 
 import java.util.List;
 

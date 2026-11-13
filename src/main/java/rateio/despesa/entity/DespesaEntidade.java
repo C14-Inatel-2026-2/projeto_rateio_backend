@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import rateio.despesa.domain.Despesa;
 import rateio.despesa.domain.StatusDespesa;
 import rateio.grupo.entity.GrupoEntidade;
-import rateio.membro.Membro;
+import rateio.membro.entity.Membro;
 
 import java.math.BigDecimal;
 import java.time.Instant;

@@ -25,8 +25,8 @@ import rateio.grupo.exception.GrupoNaoEncontradoException;
 import rateio.grupo.repository.GrupoMembroRepository;
 import rateio.grupo.repository.GrupoRepository;
 import rateio.grupo.service.AcessoAoGrupo;
-import rateio.membro.Membro;
-import rateio.membro.MembroRepository;
+import rateio.membro.entity.Membro;
+import rateio.membro.repository.MembroRepository;
 
 import java.math.BigDecimal;
 import java.time.Instant;

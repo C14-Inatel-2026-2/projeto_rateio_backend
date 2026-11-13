@@ -1,7 +1,7 @@
 package rateio.grupo.entity;
 
 import jakarta.persistence.*;
-import rateio.membro.Membro;
+import rateio.membro.entity.Membro;
 
 import java.util.UUID;
 
