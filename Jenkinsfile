@@ -35,20 +35,19 @@ pipeline {
             }
         }
 
-        stage('Deploy') {
-            when {
-                beforeAgent true
-                expression { env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main' }
-            }
-            environment {
-                // Expoe DOCKERHUB_USR e DOCKERHUB_PSW, que o jib-maven-plugin le no pom.xml.
-                DOCKERHUB = credentials('dockerhub')
-            }
-            steps {
-                // A tag com o numero do build permite voltar a uma versao especifica; "latest"
-                // acompanha sempre a main.
-                bat 'mvn -B -DskipTests compile jib:build -Djib.to.tags=%BUILD_NUMBER%,latest'
-            }
-        }
+       stage('Deploy') {
+           when {
+               beforeAgent true
+               expression { env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main' }
+           }
+           environment {
+               DOCKERHUB = credentials('dockerhub')
+               RAILWAY_TOKEN = credentials('railway-token')
+           }
+           steps {
+               bat 'mvn -B -DskipTests compile jib:build -Djib.to.tags=%BUILD_NUMBER%,latest'
+               bat 'railway redeploy --service c14-rateio --yes'
+           }
+       }
     }
 }
