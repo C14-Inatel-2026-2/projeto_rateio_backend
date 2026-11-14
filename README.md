@@ -514,3 +514,71 @@ Cauã **revisou e ajustou** o conteúdo ao estado real do projeto antes de usar.
 mensagens de commit seguindo o padrão do projeto e ajuda para resolver problemas de Git
 (`cherry-pick` de um commit para outra branch e remote do
 repositório que mudou de endereço)
+
+### Uso de IA por Paulo
+
+> Os prompts abaixo foram resumidos e reescritos para organização; refletem o pedido feito, não o texto exato.
+
+| Ferramenta | Modelo | Finalidade |
+|---|---|---|
+| Gemini (chat web) | Gemini (Assistente de IA) | Configuração do ambiente e Git, divisão determinística de despesas, estruturação de testes, configuração do Jenkins/JaCoCo, refatorações de Clean Code e documentação |
+
+**Para que foi usada:** orientação inicial para integração do IntelliJ com o GitHub e comandos de terminal Git; apoio na lógica de divisão determinística com `BigDecimal` e arredondamento seguro; suporte na criação e estruturação de testes unitários para a classe `Despesa` e o serviço de membros; configuração do pipeline de Integração Contínua (CI) no Jenkins e do plugin JaCoCo de cobertura de código; refatorações iterativas para otimização de código, extração de métodos privados, tratamento de exceções e padronização de helpers nos testes dos módulos de membros e saldos; e padronização da documentação de uso de IA no README.
+
+**Dinâmica de uso:** individual, em conversa com o assistente como um tutor de *pair programming*. Paulo tentava primeiro, levava a dúvida, o erro ou o código para receber sugestões, aplicava as modificações no IntelliJ, executava os testes locais e validava a coerência dos resultados antes de commitar. Não houve revisão de PR por IA.
+
+#### Configuração do ambiente e versionamento (Git)
+
+**Prompt:**
+
+> Como linkar o IntelliJ IDEA ao GitHub e quais são os comandos fundamentais de linha de comando do Git para controle de versão, commits atômicos e gestão de branches para quem está começando?
+
+**Resultado:** a IA orientou o passo a passo da integração do IDE e explicou a lógica dos comandos de terminal. **Aplicado** com sucesso para ganho de autonomia no versionamento (com manutenções autônomas subsequentes no `.gitignore` e remoção da pasta `.idea`).
+
+#### Divisão determinística (`DivisaoService`)
+
+**Prompt:**
+
+> Com base na regra de negócio de divisão de despesas, como estruturar a lógica de divisão exata de valores monetários utilizando BigDecimal e arredondamento seguro (RoundingMode.HALF_UP) para evitar perda de precisão?
+
+**Resultado:** a IA orientou a estrutura inicial e a lógica de arredondamento determinístico. Paulo **implementou** o código, ajustou a suíte `DivisaoServiceTest` e validou os cálculos matemáticos.
+
+#### Testes unitários da classe `Despesa`
+
+**Prompt:**
+
+> Quais cenários de testes unitários são essenciais para cobrir as regras de negócio da classe Despesa, como fechamento de parcelas, valores devidos por membro, estorno e imutabilidade de listas? Como estruturá-los?
+
+**Resultado:** a IA sugeriu cenários robustos de teste. Paulo **escreveu e organizou** os testes no `DespesaTest` cobrindo o fechamento correto (`parcelasFecham()`), valores por participante (`parcelaDe()`), estorno e inativação (`estornar()`, `estaAtiva()`) e garantia de imutabilidade (`UnsupportedOperationException`).
+
+#### Configuração do JaCoCo e do Jenkins (`Jenkinsfile`)
+
+**Prompt:**
+
+> Como configurar o plugin do JaCoCo (jacoco-maven-plugin) no pom.xml para rastreamento de cobertura e como estruturar o Jenkinsfile para executar 'mvn test jacoco:report' e publicar os relatórios JUnit e métricas de cobertura na seção post?
+
+**Resultado:** a IA detalhou o funcionamento do Jenkins e a sintaxe correta dos blocos do JaCoCo e do script de pipeline. Paulo **configurou** o ambiente de CI, testou a execução e garantiu a geração automatizada dos relatórios e métricas.
+
+#### Refatoração do módulo de membros (`MembroService`)
+
+**Prompt:**
+
+> Como posso refatorar MembroService e seus testes unitários aplicando Clean Code (como extração de métodos privados e princípio DRY) e estruturar construtores customizados nas exceções (EmailJaCadastradoException, CredenciaisInvalidasException, MembroNaoEncontradoException)?
+
+**Resultado:** a IA sugeriu a extração da validação para `validarCamposObrigatorios`, a criação de construtores nas exceções e um método *helper* (`criarMembroPadrao()`) nos testes. Paulo **aplicou** as sugestões, ajustou detalhes conforme o *code review* do grupo (como a remoção dos construtores customizados sem uso) e validou todos os testes (100% verdes)[cite: 1, 2, 3, 4, 5].
+
+#### Refatoração e otimização do módulo de saldos (`saldo`)
+
+**Prompt:**
+
+> Quais sugestões de otimização estrutural, limpeza de código e extração de métodos auxiliares posso aplicar no record Saldo, no SaldoService e nos testes (SaldoServiceTest / SaldoTest) mantendo a legibilidade aprovada pelo time (como laços for tradicionais)?
+
+**Resultado:** a IA propôs melhorias de complexidade ciclomática e padronização de helpers. Paulo **aplicou** as refatorações de forma iterativa, executou os testes locais e garantiu a coerência do código[cite: 5].
+
+#### Documentação do uso de IA
+
+**Prompt:**
+
+> Com base no meu histórico de commits e interações ao longo do projeto, estruture e padronize o relato do meu uso de Inteligência Artificial no formato do README da equipe.
+
+**Resultado:** a IA consolidou o histórico de prompts, ações e resultados em formato Markdown padronizado. Paulo **revisou e validou** o conteúdo antes de incorporá-lo à documentação oficial do repositório.
