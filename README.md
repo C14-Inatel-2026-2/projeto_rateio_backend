@@ -387,6 +387,8 @@ O arquivo é gerado em `target/jib-image.tar` e pode ser carregado com `docker l
 
 ## Uso de IA
 
+### Uso de IA por Gustavo
+
 A IA foi usada como apoio em testes, refatoração, CI/CD e documentação.
 
 > **Escopo deste registro:** os itens abaixo vêm do histórico local do Claude Code de
