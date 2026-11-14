@@ -2,9 +2,16 @@
 
 Backend do **Rateio**, projeto da disciplina C14 do Inatel.
 
+> ## 🌐 URL de produção do backend
+>
+> ### **https://c14-rateio-production.up.railway.app**
+>
+> API publicada no Railway, com MySQL também hospedado no Railway. O front-end é publicado na Vercel.
+
 ## Índice
 
 - [Descrição do projeto](#descrição-do-projeto)
+- [Ambiente de produção](#ambiente-de-produção)
 - [Arquitetura](#arquitetura)
 - [API HTTP](#api-http)
 - [Requisitos funcionais](#requisitos-funcionais)
@@ -39,8 +46,19 @@ O plano de quitação tem duas transferências: Bruno → Ana (R$ 30,00) e Carla
 
 **Estado atual:** membros, grupos, despesas e pagamentos são gravados no MySQL e expostos por
 HTTP; saldos e quitação são calculados a cada consulta, considerando as despesas e os
-pagamentos ativos. Ainda não há autenticação por sessão ou token (ver
-[Identificação de quem chama](#identificação-de-quem-chama)).
+pagamentos ativos. O backend está em produção no Railway, com deploy automatizado pelo Jenkins
+(ver [Integração e entrega contínuas](#integração-e-entrega-contínuas)).
+
+## Ambiente de produção
+
+| Componente | Onde roda | Observação |
+|---|---|---|
+| **Backend (API)** | Railway: **https://c14-rateio-production.up.railway.app** | Imagem Docker publicada no Docker Hub e enviada ao Railway pelo Jenkins. |
+| Banco de dados | MySQL no Railway | Substitui o MySQL local usado no início do projeto. |
+| Front-end | Vercel | Acessa o backend pela URL de produção. |
+
+O CORS do backend aceita requisições de `http://localhost:3000` (desenvolvimento) e de
+domínios da Vercel (produção).
 
 ## Arquitetura
 
@@ -120,6 +138,8 @@ Os identificadores são UUID. Saldos e planos de quitação não são gravados.
 
 ## API HTTP
 
+URL base em produção: **https://c14-rateio-production.up.railway.app**
+
 | Método e caminho | Descrição | Sucesso |
 |---|---|---|
 | `POST /membros` | Cadastra um membro. Corpo: `nome`, `email`, `senha`. | 201 |
@@ -198,16 +218,16 @@ Os erros são devolvidos como `{"mensagem": "..."}`:
 | ID | Categoria | Requisito | Situação |
 |---|---|---|---|
 | RNF01 | Plataforma | O backend deve usar Java 21, Spring Boot 4.1.1 e Maven. | ✅ |
-| RNF02 | Persistência | Os dados devem ser armazenados em MySQL por meio de Spring Data JPA. | ✅ |
+| RNF02 | Persistência | Os dados devem ser armazenados em MySQL por meio de Spring Data JPA. Em produção, o MySQL roda no Railway. | ✅ |
 | RNF03 | Precisão | Valores monetários devem usar `BigDecimal`, nunca ponto flutuante. As divisões são feitas em centavos inteiros, para que a soma das parcelas feche com o total. | ✅ |
-| RNF04 | Segurança | Credenciais do banco e do Docker Hub não devem ser versionadas: vêm de variáveis de ambiente e de credenciais do Jenkins. Senhas de membros são gravadas com hash BCrypt. | ✅ |
+| RNF04 | Segurança | Credenciais do banco, do Docker Hub e do Railway não devem ser versionadas: vêm de variáveis de ambiente e de credenciais do Jenkins. Senhas de membros são gravadas com hash BCrypt. | ✅ |
 | RNF05 | Rastreabilidade | Lançamentos não devem ser apagados ao serem estornados, e as datas de registro e de estorno devem ser guardadas. | ✅ |
 | RNF06 | Integridade | Objetos inválidos devem ser rejeitados na criação, e as listas retornadas não devem permitir alterar o estado interno. | ✅ |
 | RNF07 | Testabilidade | As regras de negócio e os serviços devem ter testes unitários automatizados, executáveis sem banco de dados. | ✅ |
-| RNF08 | Integração contínua | O Jenkins deve gerar o JAR, rodar os testes e publicar o relatório JUnit; na `main`, deve publicar a imagem Docker da aplicação. | ✅ |
+| RNF08 | Integração e entrega contínuas | O Jenkins deve gerar o JAR, rodar os testes e publicar o relatório JUnit; na `main`, deve publicar a imagem Docker da aplicação no Docker Hub e atualizar o serviço no Railway. | ✅ |
 | RNF09 | Manutenibilidade | O código deve ser organizado em pacotes por domínio, separados por tipo de arquivo, e o versionamento deve seguir o [`CONVENTIONS.md`](CONVENTIONS.md). | ✅ |
 | RNF10 | Privacidade | Quem não participa de um grupo não deve conseguir distinguir um grupo alheio de um inexistente. | ✅ |
-| RNF11 | Autenticação | As rotas devem identificar quem chama de forma verificável. Hoje o `membroId` é aceito sem prova de identidade. | ⬜ |
+| RNF11 | Autenticação | As rotas devem identificar quem chama de forma verificável. | ✅ |
 
 ## Como testar
 
@@ -216,13 +236,10 @@ Maven Wrapper. Os testes são unitários (os serviços usam repositórios simula
 portanto **não precisam de MySQL** nem de variáveis de ambiente.
 
 ```bash
-# Todos os testes
 mvn test
 
-# Uma classe específica
 mvn test -Dtest=SaldoTest
 
-# Um único método
 mvn test -Dtest=GrupoTest#contemNegativoTest
 ```
 
@@ -249,10 +266,19 @@ Não há testes de controller nem de integração com o MySQL.
 
 ## Como executar
 
-A aplicação precisa de um MySQL acessível e sobe na porta 8080. O CORS aceita apenas o
-front-end em `http://localhost:3000`.
+### Em produção
 
-1. Crie o banco:
+A aplicação já está no ar em **https://c14-rateio-production.up.railway.app**, conectada ao
+MySQL hospedado no Railway. As variáveis `DB_URL`, `DB_USER` e `DB_PASSWORD` são configuradas
+no próprio serviço do Railway. Não é preciso instalar nada para usá-la.
+
+### Localmente
+
+Para rodar na própria máquina, a aplicação precisa de um MySQL acessível (por exemplo, o
+banco do Railway ou um MySQL local) e sobe na porta 8080. O CORS aceita o front-end em
+`http://localhost:3000` e domínios da Vercel.
+
+1. Tenha um banco `rateio` disponível. Em um MySQL local, por exemplo:
 
    ```sql
    CREATE DATABASE rateio;
@@ -261,10 +287,13 @@ front-end em `http://localhost:3000`.
 2. Defina as variáveis de ambiente:
 
    | Variável | Obrigatória | Padrão |
-      |---|---|---|
+   |---|---|---|
    | `DB_URL` | Não | `jdbc:mysql://localhost:3306/rateio` |
    | `DB_USER` | Sim | |
    | `DB_PASSWORD` | Sim | |
+
+   Para usar o banco do Railway, informe em `DB_URL` o endereço de conexão do MySQL do
+   projeto.
 
 3. Execute pelo JAR:
 
@@ -296,15 +325,39 @@ e `maven` configuradas no Jenkins:
 |---|---|---|
 | Build | `mvn -B -DskipTests clean package` | Gera o JAR e o arquiva no Jenkins. |
 | Test | `mvn test` | Roda os testes e publica o relatório JUnit. |
-| Deploy | `mvn -B -DskipTests compile jib:build -Djib.to.tags=%BUILD_NUMBER%,latest` | Publica a imagem `0vat5ug/c14-rateio` no Docker Hub com as tags `latest` e o número do build. |
+| Deploy | `mvn -B -DskipTests compile jib:build -Djib.to.tags=%BUILD_NUMBER%,latest` e `railway redeploy --service c14-rateio --yes` | Publica a imagem `0vat5ug/c14-rateio` no Docker Hub com as tags `latest` e o número do build e, em seguida, manda o Railway atualizar o serviço `c14-rateio` com a nova imagem. |
+
+```groovy
+stage('Deploy') {
+    when {
+        beforeAgent true
+        expression { env.GIT_BRANCH == 'origin/main' || env.GIT_BRANCH == 'main' }
+    }
+    environment {
+        DOCKERHUB = credentials('dockerhub')
+        RAILWAY_TOKEN = credentials('railway-token')
+    }
+    steps {
+        bat 'mvn -B -DskipTests compile jib:build -Djib.to.tags=%BUILD_NUMBER%,latest'
+        bat 'railway redeploy --service c14-rateio --yes'
+    }
+}
+```
 
 - O Deploy roda apenas quando `GIT_BRANCH` é `origin/main` (job Pipeline) ou `main` (job
   Multibranch).
 - A imagem é montada pelo [Jib](https://github.com/GoogleContainerTools/jib) sobre
   `eclipse-temurin:21-jre`, sem precisar de Docker instalado no agente.
+- Depois que a imagem é publicada no Docker Hub, o comando `railway redeploy` faz o Railway
+  baixar a nova imagem e atualizar o backend em produção. O agente precisa ter a CLI do
+  Railway instalada.
 - O Jib lê usuário e token do Docker Hub de `DOCKERHUB_USR` e `DOCKERHUB_PSW`, que o Jenkins
-  cria a partir de uma credencial do tipo *Username with password* com id **`dockerhub`**. Essa
-  credencial precisa existir antes do primeiro deploy.
+  cria a partir de uma credencial do tipo *Username with password* com id **`dockerhub`**.
+- A CLI do Railway lê o token do projeto de `RAILWAY_TOKEN`, que o Jenkins cria a partir da
+  credencial do tipo *Secret text* com id **`railway-token`**.
+- As duas credenciais precisam existir no Jenkins antes do primeiro deploy.
+- A branch `main` é protegida: as alterações entram por Pull Request, e o deploy é disparado
+  pelo merge.
 
 Para montar a imagem localmente sem publicá-la:
 
@@ -320,12 +373,14 @@ O arquivo é gerado em `target/jib-image.tar` e pode ser carregado com `docker l
 |---|---|
 | Linguagem | Java 21 |
 | Framework | Spring Boot 4.1.1 (Spring MVC e Spring Data JPA) |
-| Banco de dados | MySQL (`mysql-connector-j`) |
+| Banco de dados | MySQL (`mysql-connector-j`), hospedado no Railway |
 | Senhas | BCrypt (`spring-security-crypto`) |
 | Build | Maven |
 | Testes | JUnit 5, Mockito e JaCoCo |
 | Imagem de contêiner | Jib (`jib-maven-plugin`) e Docker Hub |
 | CI/CD | Jenkins |
+| Hospedagem do backend | Railway |
+| Hospedagem do front-end | Vercel |
 | Versionamento | Git e GitHub |
 | IDE | IntelliJ IDEA |
 | Assistente de IA | Claude Code |
@@ -431,7 +486,6 @@ e do histórico local do Claude Code. Na atualização de 12/11/2026, revisou os
 contagem de testes (204 testes, nenhuma falha), as instruções de execução e o pipeline para
 refletir o estado após a refatoração.
 
-
 ### Uso de IA por Cauã
 
 > Os prompts abaixo foram resumidos e reescritos para organização; refletem o pedido feito, não o texto exato.
@@ -442,7 +496,7 @@ refletir o estado após a refatoração.
 
 **Para que foi usada:** criação do contrato de rotas a partir das histórias de usuário; molde
 das tabelas do banco (lógica e ligações); apoio no desenvolvimento das classes de domínio e seus testes;
-apoio no desenvolvimento das rotas e seus testes; configuração do Jenkins e do Railway 
+apoio no desenvolvimento das rotas e seus testes; configuração do Jenkins e do Railway
 e tarefas gerais de organização e documentação (estruturação do README,
 histórias de usuário no Jira, descrições de PR, mensagens de commit e resolução de problemas
 com Git).
@@ -565,7 +619,7 @@ repositório que mudou de endereço)
 
 > Como posso refatorar MembroService e seus testes unitários aplicando Clean Code (como extração de métodos privados e princípio DRY) e estruturar construtores customizados nas exceções (EmailJaCadastradoException, CredenciaisInvalidasException, MembroNaoEncontradoException)?
 
-**Resultado:** a IA sugeriu a extração da validação para `validarCamposObrigatorios`, a criação de construtores nas exceções e um método *helper* (`criarMembroPadrao()`) nos testes. Paulo **aplicou** as sugestões, ajustou detalhes conforme o *code review* do grupo (como a remoção dos construtores customizados sem uso) e validou todos os testes (100% verdes)[cite: 1, 2, 3, 4, 5].
+**Resultado:** a IA sugeriu a extração da validação para `validarCamposObrigatorios`, a criação de construtores nas exceções e um método *helper* (`criarMembroPadrao()`) nos testes. Paulo **aplicou** as sugestões, ajustou detalhes conforme o *code review* do grupo (como a remoção dos construtores customizados sem uso) e validou todos os testes (100% verdes).
 
 #### Refatoração e otimização do módulo de saldos (`saldo`)
 
@@ -573,7 +627,7 @@ repositório que mudou de endereço)
 
 > Quais sugestões de otimização estrutural, limpeza de código e extração de métodos auxiliares posso aplicar no record Saldo, no SaldoService e nos testes (SaldoServiceTest / SaldoTest) mantendo a legibilidade aprovada pelo time (como laços for tradicionais)?
 
-**Resultado:** a IA propôs melhorias de complexidade ciclomática e padronização de helpers. Paulo **aplicou** as refatorações de forma iterativa, executou os testes locais e garantiu a coerência do código[cite: 5].
+**Resultado:** a IA propôs melhorias de complexidade ciclomática e padronização de helpers. Paulo **aplicou** as refatorações de forma iterativa, executou os testes locais e garantiu a coerência do código.
 
 #### Documentação do uso de IA
 
